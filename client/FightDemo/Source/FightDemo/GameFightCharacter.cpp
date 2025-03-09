@@ -4,6 +4,7 @@
 #include "GameFightCharacter.h"
 
 #include "game/FightInstance.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AGameFightCharacter::AGameFightCharacter()
@@ -32,6 +33,27 @@ void AGameFightCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+void AGameFightCharacter::UpdateActorRotator()
+{
+	// 处于移动中 actor朝向向摄影机朝向旋转
+	auto camera = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
+	auto cameraRot = camera->GetCameraRotation();
+	// 获取 cameraRot xy平面上的旋转值
+	cameraRot.Pitch = 0;
+	cameraRot.Roll = 0;
+
+	auto actorRot = GetActorRotation();
+	auto setActorRot = actorRot;
+	setActorRot.Pitch = 0;
+	setActorRot.Roll = 0;
+
+
+	auto gameDelta = GetWorld()->GetDeltaSeconds();
+	auto rot = FMath::RInterpTo(setActorRot, cameraRot, gameDelta  , 5);
+	actorRot.Yaw = rot.Yaw;
+	SetActorRotation(actorRot);
 }
 
 void AGameFightCharacter::EnterBlock()
@@ -98,7 +120,7 @@ void AGameFightCharacter::AttackPlayer()
 	case ECharaterState::CharaterState_Attacking:
 		if (canInputRecord)
 		{
-			AllInputs = EInputEnum::Attack;
+			AllInputs = EPlayerState::Attack;
 		}
 		break;
 
@@ -143,7 +165,7 @@ void AGameFightCharacter::MontagePlayerEnd()
 {
 	FightAnimMontage = nullptr;
 	canInputRecord = false;
-	AllInputs = EInputEnum::None;
+	AllInputs = EPlayerState::None;
 	canFanJi = false;
 }
 
@@ -172,10 +194,10 @@ void AGameFightCharacter::Anim_Notify(EAnimNotifyState notifyState)
 	case EAnimNotifyState::AttackNext:
 		GameCharaterState = ECharaterState::CharaterState_AttackingNext;
 		AttackNum++;
-		if (AllInputs == EInputEnum::Attack)
+		if (AllInputs == EPlayerState::Attack)
 		{
 			AttackPlayer();
-			AllInputs = EInputEnum::None;
+			AllInputs = EPlayerState::None;
 		}
 		break;
 	case EAnimNotifyState::ComboneEnd:

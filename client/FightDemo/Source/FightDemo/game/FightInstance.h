@@ -34,10 +34,41 @@ enum class EAnimNotifyState : uint8
 
 
 UENUM(BlueprintType)
-enum class EInputEnum : uint8
+enum class EPlayerState : uint8
 {
 	None = 0 UMETA(DisplayName="无")  ,
 	Attack UMETA(DisplayName="攻击")  ,
+};
+
+UENUM(BlueprintType)
+enum class EInputEnum : uint8
+{
+	None = 0  UMETA(DisplayName="无")  ,
+	MoveForward  UMETA(DisplayName="前进")  ,
+	MoveBackward  UMETA(DisplayName="后退")  ,
+	MoveLeft  UMETA(DisplayName="左移")  ,
+	MoveRight  UMETA(DisplayName="右移")  ,
+	NormalAttack  UMETA(DisplayName="轻击")  ,
+	HeavyAttack  UMETA(DisplayName="重击")  ,
+	Defend  UMETA(DisplayName="防御")  ,
+};
+
+USTRUCT(BlueprintType)
+struct FAttackAnimTable : public  FTableRowBase
+{
+	GENERATED_BODY()
+
+	// ID
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int ID;
+
+	// 输入合集
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<EInputEnum> Inputs;
+
+	// 动作对象
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TAssetPtr<UAnimMontage> ActionAnimMontage;
 };
 
 /**

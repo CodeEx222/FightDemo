@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "game/FightInstance.h"
 #include "GameFramework/Character.h"
 #include "GameFightCharacter.generated.h"
 
@@ -59,9 +60,18 @@ public:
 	int AttackNum;
 
 	bool canInputRecord;
-	EInputEnum AllInputs;
+	EPlayerState AllInputs;
 
 	bool canFanJi;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "左右移动值"))
+	float MoveActionX;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "前后移动值"))
+	float MoveActionY;
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateActorRotator();
+
 
 	UFUNCTION(BlueprintCallable)
 	void EnterBlock();
