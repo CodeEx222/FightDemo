@@ -3,6 +3,8 @@
 
 #include "GameFightCharacter.h"
 
+#include "fight/AnimDefine.h"
+#include "fight/FightComponent.h"
 #include "game/FightInstance.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -11,6 +13,8 @@ AGameFightCharacter::AGameFightCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	FightComponent = CreateDefaultSubobject<UFightComponent>(TEXT("FightComponent"));
 
 }
 
@@ -58,7 +62,7 @@ void AGameFightCharacter::UpdateActorRotator()
 
 void AGameFightCharacter::EnterBlock()
 {
-	GameCharaterState =  ECharaterState::CharaterState_Defending;
+	FightComponent->GameCharaterState =  ECharaterState::CharaterState_Defending;
 	// 判断这时候目标进入
 	if (PlayerFightTarget != nullptr && PlayerFightTarget->canFanJi)
 	{
@@ -72,7 +76,7 @@ void AGameFightCharacter::EnterBlock()
 			{
 				FightAnimMontage = anim;
 				PlayGameMontage(anim);
-				GameCharaterState = ECharaterState::CharaterState_Attacking;
+				FightComponent->GameCharaterState = ECharaterState::CharaterState_Attacking;
 			}
 			// 对面播放受击
 			PlayerFightTarget->BeAttackPlayer(1);
@@ -86,9 +90,9 @@ void AGameFightCharacter::EnterBlock()
 
 void AGameFightCharacter::ExitBlock()
 {
-	if (GameCharaterState == ECharaterState::CharaterState_Defending)
+	if (FightComponent->GameCharaterState == ECharaterState::CharaterState_Defending)
 	{
-		GameCharaterState = ECharaterState::CharaterState_None;
+		FightComponent->GameCharaterState = ECharaterState::CharaterState_None;
 	}
 
 }
@@ -96,7 +100,7 @@ void AGameFightCharacter::ExitBlock()
 void AGameFightCharacter::AttackPlayer()
 {
 
-	switch (GameCharaterState)
+	switch (FightComponent->GameCharaterState)
 	{
 	case ECharaterState::CharaterState_None:
 	case ECharaterState::CharaterState_AttackingNext:
@@ -113,12 +117,12 @@ void AGameFightCharacter::AttackPlayer()
 			{
 				FightAnimMontage = anim;
 				PlayGameMontage(anim);
-				GameCharaterState = ECharaterState::CharaterState_Attacking;
+				FightComponent->GameCharaterState = ECharaterState::CharaterState_Attacking;
 			}
 		}
 		break;
 	case ECharaterState::CharaterState_Attacking:
-		if (canInputRecord)
+		if (FightComponent->canInputRecord)
 		{
 			AllInputs = EPlayerState::Attack;
 		}
@@ -135,7 +139,7 @@ void AGameFightCharacter::BeAttackPlayer(int mode)
 		// 获取连击索引值
 		auto anim  = FightBeAttackAnimArray[0];
 
-		if (GameCharaterState == ECharaterState::CharaterState_Defending)
+		if (FightComponent->GameCharaterState == ECharaterState::CharaterState_Defending)
 		{
 			anim  = FightBeAttackAnimArray[1];
 		}
@@ -164,7 +168,7 @@ void AGameFightCharacter::BeAttackPlayer(int mode)
 void AGameFightCharacter::MontagePlayerEnd()
 {
 	FightAnimMontage = nullptr;
-	canInputRecord = false;
+	FightComponent->canInputRecord = true;
 	AllInputs = EPlayerState::None;
 	canFanJi = false;
 }
@@ -192,7 +196,7 @@ void AGameFightCharacter::Anim_Notify(EAnimNotifyState notifyState)
 		}
 		break;
 	case EAnimNotifyState::AttackNext:
-		GameCharaterState = ECharaterState::CharaterState_AttackingNext;
+		FightComponent->GameCharaterState = ECharaterState::CharaterState_AttackingNext;
 		AttackNum++;
 		if (AllInputs == EPlayerState::Attack)
 		{
@@ -201,20 +205,20 @@ void AGameFightCharacter::Anim_Notify(EAnimNotifyState notifyState)
 		}
 		break;
 	case EAnimNotifyState::ComboneEnd:
-		GameCharaterState = ECharaterState::CharaterState_None;
+		FightComponent->GameCharaterState = ECharaterState::CharaterState_None;
 		AttackNum = 0;
 		break;
 	case EAnimNotifyState::InputStart:
-		canInputRecord = true;
+		FightComponent->canInputRecord = true;
 		break;
 	case EAnimNotifyState::InputEnd:
-		canInputRecord = false;
+		FightComponent->canInputRecord = false;
 		break;
 	case EAnimNotifyState::BeAttackedStart:
-		GameCharaterState = ECharaterState::CharaterState_Attacked;
+		FightComponent->GameCharaterState = ECharaterState::CharaterState_Attacked;
 		break;
 	case EAnimNotifyState::BeAttackedEnd:
-		GameCharaterState = ECharaterState::CharaterState_None;
+		FightComponent->GameCharaterState = ECharaterState::CharaterState_None;
 		break;
 	case EAnimNotifyState::FanjiAttackedStart:
 		canFanJi = true;
@@ -255,4 +259,5 @@ bool AGameFightCharacter::IsAttackPlayer(AGameFightCharacter* target)
 	return false;
 
 }
+
 

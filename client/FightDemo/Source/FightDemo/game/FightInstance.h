@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "Blueprint/BlueprintSupport.h"
+#include "UObject/UnrealNames.h"
+#include "Animation/AnimNotifies/AnimNotifyState.h"
 #include "FightInstance.generated.h"
 
 
@@ -64,11 +67,15 @@ struct FAttackAnimTable : public  FTableRowBase
 
 	// 输入合集
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<EInputEnum> MoveInputs;
+
+	// 输入合集
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<EInputEnum> Inputs;
 
 	// 动作对象
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TAssetPtr<UAnimMontage> ActionAnimMontage;
+	TSoftObjectPtr<UAnimMontage> ActionAnimMontage;
 };
 
 /**
