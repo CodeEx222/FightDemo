@@ -11,6 +11,10 @@
 
 enum class EInputEnum : uint8;
 
+
+
+
+
 USTRUCT(BlueprintType)
 struct FInputElement
 {
@@ -64,8 +68,11 @@ class FIGHTDEMO_API UFightComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
+	// 记录输入记录
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FInputElement> InputArray;
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FInputElement> MoveInputArray;
 
@@ -77,18 +84,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "人物状态"))
 	ECharaterState GameCharaterState;
-
-	// 是否可以记录输入
-	bool canInputRecord;
-	// 是否清空记录输入
-	bool clearInputRecord;
-	// 是否可以播放攻击
-	bool canPlayAttack;
-	// 是否处于连击当中
-	bool isInCombo;
-
-
-
 
 protected:
 	// Called when the game starts
@@ -102,7 +97,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
-	void CheckActionTimeLine(int64 CurrentTime, float DeltaTime);
+	void CheckActionTimeLine(int64 CurrentTime, float DeltaTime) const;
 
 	UFUNCTION(BlueprintCallable)
 	void AddInput(EInputEnum inputEnum);
@@ -113,12 +108,21 @@ public:
 	virtual void OnAnimNotify(UAnimNotify * Notify);
 	virtual void OnAnimNotifyState(UAnimNotifyState * NotifyState, bool bStart);
 
+
+
+	void AddNewInput(const FInputElement& NewInput);
+
+
+	void SetPlayerActionState(EPlayerState Type , bool Value = true) const;
+	bool GetPlayerActionState(EPlayerState Type) const;
+
+
 private:
 	void CheckAttack();
 	FAttackAnimTable* CheckInput();
 
 	// 动作状态指示
-	std::shared_ptr<std::bitset<16>> player_action_state_bitset_;
+	std::shared_ptr<std::bitset<32>> PlayerActionStateBitset;
 
 	// 保存 行动时间线  结束时间线  行动结构内存池的结构
 	TFightTimeLine<USkillActionInfo>* FightTimeLineObj;

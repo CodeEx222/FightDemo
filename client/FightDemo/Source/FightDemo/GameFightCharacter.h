@@ -54,9 +54,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "连击数量"))
 	int AttackNum;
 
-
-	EPlayerState AllInputs;
-
 	bool canFanJi;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "左右移动值"))
@@ -88,8 +85,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void MontagePlayerEnd();
 
-	UFUNCTION(BlueprintCallable)
-	void Anim_Notify(EAnimNotifyState notifyState);
+	//UFUNCTION(BlueprintCallable)
+	//void Anim_Notify(EAnimNotifyState notifyState);
 
 
 	UFUNCTION(BlueprintImplementableEvent)

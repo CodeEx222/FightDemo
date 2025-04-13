@@ -1,5 +1,3 @@
-
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -21,5 +19,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	AGameFightCharacter* gameCharacter;
 
-	
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayFightMontage(UAnimMontage* AnimMontage, float PlayRate = 1.0, float StartPosition = 0.0f,
+	                      const FName &NotifyName = FName("None"), bool bStopAllMontages = true);
 };

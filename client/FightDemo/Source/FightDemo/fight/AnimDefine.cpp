@@ -63,7 +63,7 @@ void UFightAnimNotifyState::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSeq
 		const auto Character = Cast<AGameFightCharacter>(MeshComp->GetOwner());
 		if (Character != nullptr && Character->FightComponent != nullptr)
 		{
-			Character->FightComponent->OnAnimNotifyState(this, true);
+			Character->FightComponent->OnAnimNotifyState(this, false);
 		}
 	}
 }

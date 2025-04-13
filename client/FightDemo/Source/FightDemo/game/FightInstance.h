@@ -35,14 +35,19 @@ enum class EAnimNotifyState : uint8
 };
 
 
-
+// 玩家状态标识
 UENUM(BlueprintType)
 enum class EPlayerState : uint8
 {
-	None = 0 UMETA(DisplayName="无")  ,
-	Attack UMETA(DisplayName="攻击")  ,
+	None = 0 UMETA(DisplayName="无"),
+	InPlayAttack UMETA(DisplayName="是否在攻击中"),
+	InComboNext UMETA(DisplayName="是否准备播放下一个战斗"),
+	CanAttack UMETA(DisplayName="可以攻击"),
+	CanRecordInput UMETA(DisplayName="可以记录输入"),
+
 };
 
+// 输入标识
 UENUM(BlueprintType)
 enum class EInputEnum : uint8
 {

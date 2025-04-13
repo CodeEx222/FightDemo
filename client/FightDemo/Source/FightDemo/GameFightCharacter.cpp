@@ -122,10 +122,7 @@ void AGameFightCharacter::AttackPlayer()
 		}
 		break;
 	case ECharaterState::CharaterState_Attacking:
-		if (FightComponent->canInputRecord)
-		{
-			AllInputs = EPlayerState::Attack;
-		}
+
 		break;
 
 	default: ;
@@ -168,69 +165,62 @@ void AGameFightCharacter::BeAttackPlayer(int mode)
 void AGameFightCharacter::MontagePlayerEnd()
 {
 	FightAnimMontage = nullptr;
-	FightComponent->canInputRecord = true;
-	AllInputs = EPlayerState::None;
 	canFanJi = false;
 }
 
-void AGameFightCharacter::Anim_Notify(EAnimNotifyState notifyState)
-{
-	switch (notifyState)
-	{
-	case EAnimNotifyState::Attack:
-		{
-			auto target = PlayerFightTarget;
-			ChangeTarget();
-			target = PlayerFightTarget;
-			if (target == nullptr)
-			{
-				return;
-			}
-
-			if (IsAttackPlayer(target))
-			{
-				target->BeAttackPlayer(0);
-			}
-
-
-		}
-		break;
-	case EAnimNotifyState::AttackNext:
-		FightComponent->GameCharaterState = ECharaterState::CharaterState_AttackingNext;
-		AttackNum++;
-		if (AllInputs == EPlayerState::Attack)
-		{
-			AttackPlayer();
-			AllInputs = EPlayerState::None;
-		}
-		break;
-	case EAnimNotifyState::ComboneEnd:
-		FightComponent->GameCharaterState = ECharaterState::CharaterState_None;
-		AttackNum = 0;
-		break;
-	case EAnimNotifyState::InputStart:
-		FightComponent->canInputRecord = true;
-		break;
-	case EAnimNotifyState::InputEnd:
-		FightComponent->canInputRecord = false;
-		break;
-	case EAnimNotifyState::BeAttackedStart:
-		FightComponent->GameCharaterState = ECharaterState::CharaterState_Attacked;
-		break;
-	case EAnimNotifyState::BeAttackedEnd:
-		FightComponent->GameCharaterState = ECharaterState::CharaterState_None;
-		break;
-	case EAnimNotifyState::FanjiAttackedStart:
-		canFanJi = true;
-		break;
-		case EAnimNotifyState::FanjiAttackedEnd:
-			canFanJi = false;
-		break;
-	default:
-		break;
-	}
-}
-
+// void AGameFightCharacter::Anim_Notify(EAnimNotifyState notifyState)
+// {
+// 	switch (notifyState)
+// 	{
+// 	case EAnimNotifyState::Attack:
+// 		{
+// 			auto target = PlayerFightTarget;
+// 			ChangeTarget();
+// 			target = PlayerFightTarget;
+// 			if (target == nullptr)
+// 			{
+// 				return;
+// 			}
+//
+// 			if (IsAttackPlayer(target))
+// 			{
+// 				target->BeAttackPlayer(0);
+// 			}
+//
+//
+// 		}
+// 		break;
+// 	case EAnimNotifyState::AttackNext:
+// 		FightComponent->GameCharaterState = ECharaterState::CharaterState_AttackingNext;
+// 		AttackNum++;
+// 		break;
+// 	case EAnimNotifyState::ComboneEnd:
+// 		FightComponent->GameCharaterState = ECharaterState::CharaterState_None;
+// 		AttackNum = 0;
+// 		break;
+// 	case EAnimNotifyState::InputStart:
+// 		FightComponent->canInputRecord = true;
+// 		break;
+// 	case EAnimNotifyState::InputEnd:
+// 		FightComponent->canInputRecord = false;
+// 		break;
+// 	case EAnimNotifyState::BeAttackedStart:
+// 		FightComponent->GameCharaterState = ECharaterState::CharaterState_Attacked;
+// 		break;
+// 	case EAnimNotifyState::BeAttackedEnd:
+// 		FightComponent->GameCharaterState = ECharaterState::CharaterState_None;
+// 		break;
+// 	case EAnimNotifyState::FanjiAttackedStart:
+// 		canFanJi = true;
+// 		break;
+// 		case EAnimNotifyState::FanjiAttackedEnd:
+// 			canFanJi = false;
+// 		break;
+// 	default:
+// 		break;
+// 	}
+// }
+//
 
 bool AGameFightCharacter::IsAttackPlayer(AGameFightCharacter* target)
 {
