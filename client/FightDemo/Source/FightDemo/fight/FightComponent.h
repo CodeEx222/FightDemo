@@ -130,4 +130,9 @@ private:
 	UDataTable* SkillDataTable;
 
 	TArray<FAttackAnimTable*> AttackAnimTableArray;
+
+	UAnimMontage* MyMontage1;
+	UAnimMontage* MyMontage2;
+	UAnimMontage* MyMontage3;
+	UAnimMontage* MyMontage4;
 };
