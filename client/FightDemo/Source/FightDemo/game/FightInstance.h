@@ -81,6 +81,18 @@ struct FAttackAnimTable : public  FTableRowBase
 	// 动作对象
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UAnimMontage> ActionAnimMontage;
+
+	// 受击对象
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSoftObjectPtr<UAnimMontage> BeAttackAnimMontage;
+
+	// 格挡对象
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSoftObjectPtr<UAnimMontage> BlockAttackAnimMontage;
+
+	// 消除格挡值
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int AttackBlockValue = 0;
 };
 
 /**

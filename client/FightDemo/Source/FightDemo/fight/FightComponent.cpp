@@ -18,66 +18,6 @@ UFightComponent::UFightComponent()
 
 	PlayerActionStateBitset = std::make_shared<std::bitset<32>>();
 
-	// 在构造函数或初始化函数中加载
-	static ConstructorHelpers::FObjectFinder<UAnimMontage> MontageFinder(TEXT("/Game/res/testPoint.testPoint"));
-	if (MontageFinder.Succeeded())
-	{
-		MyMontage1 = MontageFinder.Object;
-	}
-	static ConstructorHelpers::FObjectFinder<UAnimMontage> MontageFinder1(TEXT("/Game/res/testPoint1.testPoint1"));
-	if (MontageFinder1.Succeeded())
-	{
-		MyMontage2 = MontageFinder.Object;
-	}
-	static ConstructorHelpers::FObjectFinder<UAnimMontage> MontageFinder2(TEXT("/Game/res/testPoint2.testPoint2"));
-	if (MontageFinder2.Succeeded())
-	{
-		MyMontage3 = MontageFinder.Object;
-	}
-	static ConstructorHelpers::FObjectFinder<UAnimMontage> MontageFinder3(TEXT("/Game/res/testPoint3.testPoint3"));
-	if (MontageFinder3.Succeeded())
-	{
-		MyMontage4 = MontageFinder.Object;
-	}
-
-	TArray<UAnimMontage*> array = { MyMontage1, MyMontage2, MyMontage3, MyMontage4 };
-	for (int i = 0; i < array.Num(); ++i)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[%d] %s"),i, *array[i]->GetName());
-		auto montage = array[i];
-		for (FAnimNotifyEvent Notify : montage->Notifies)
-		{
-			if (Notify.Notify != nullptr)
-			{
-				auto notifyState = Cast<UFightAnimNotify>(Notify.Notify);
-				if (notifyState != nullptr)
-				{
-					auto notifyTime = Notify.GetTriggerTime();
-					auto notifyEnum = notifyState->AnimEnum;
-
-					UE_LOG(LogTemp, Display, TEXT("Notify [%s] Time: %f"), *Notify.NotifyName.ToString() , notifyTime);
-
-				}
-			}
-			else if (Notify.NotifyStateClass != nullptr)
-			{
-				auto notifyState = Cast<UFightAnimNotifyState>(Notify.NotifyStateClass);
-				if (notifyState != nullptr)
-				{
-					auto notifyTime = Notify.GetTriggerTime();
-					auto notifyEndTime = Notify.GetEndTriggerTime();
-					auto notifyEnum = notifyState->AnimEnum;
-
-					UE_LOG(LogTemp, Display, TEXT("Notify [%s] Time: [%f]-[%f]"),
-						*Notify.NotifyName.ToString() , notifyTime, notifyEndTime);
-				}
-			}
-		}
-	}
-
-
-
-
 }
 
 
@@ -275,6 +215,28 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 
 }
 
+void UFightComponent::PlayBeAttackSkill(FAttackAnimTable* SkillToPlay)
+{
+	const auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
+	if (OwnCharacterObj == nullptr || SkillToPlay == nullptr)
+	{
+		return;
+	}
+	const auto AnimInstance = Cast<UGameAnimInstance>(OwnCharacterObj->GetMesh()->GetAnimInstance());
+	if (AnimInstance == nullptr)
+	{
+		return;
+	}
+
+	// 要播放的动画
+	const auto anim = SkillToPlay->BeAttackAnimMontage;
+	const auto PlayMontage = anim.LoadSynchronous();
+
+	AnimInstance->PlayFightMontage(PlayMontage,1,0,FName("Start"), true);
+
+
+}
+
 void UFightComponent::CheckAttack()
 {
 	const auto SkillToPlay = CheckInput();
@@ -301,6 +263,7 @@ void UFightComponent::CheckAttack()
 	SetPlayerActionState(EPlayerState::InPlayAttack);
 
 	SetPlayerActionState(EPlayerState::CanAttack,false);
+	CurrentPlayAnimTable = SkillToPlay;
 	PlaySkill(SkillToPlay);
 }
 
@@ -318,6 +281,16 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 		case  EFightAnimNotify::Attack:
 		{
 			// 触发攻击
+			auto target = GetAttackCharacter();
+			if (target != nullptr)
+			{
+				// 判断目标对象是否
+				if (auto fightComponent = target->GetComponentByClass<UFightComponent>(); fightComponent != nullptr)
+				{
+					fightComponent->PlayBeAttackSkill(CurrentPlayAnimTable);
+				}
+			}
+
 
 		}
 	case EFightAnimNotify::AttackNext:
@@ -473,3 +446,38 @@ bool UFightComponent::GetPlayerActionState(EPlayerState Type) const
 }
 
 #pragma endregion
+
+AGameFightCharacter* UFightComponent::GetAttackCharacter()
+{
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGameFightCharacter::StaticClass(), FoundActors);
+
+	for (auto Actor : FoundActors)
+	{
+		// 假如角色
+		auto Target = Cast<AGameFightCharacter>(Actor);
+		if (Target == nullptr)
+		{
+			continue;
+		}
+
+		if (Target == GetOwner())
+		{
+			continue;
+		}
+
+		// 判断位置在1米以内, 并且方向在正前方30度
+		if (FVector::Distance(GetOwner()->GetActorLocation(), Target->GetActorLocation()) < 150)
+		{
+			const auto ForwardVector = GetOwner()->GetActorForwardVector();
+			const auto TargetVector = Target->GetActorLocation() - GetOwner()->GetActorLocation();
+			const auto Angle = FMath::Acos(FVector::DotProduct(ForwardVector, TargetVector.GetSafeNormal()));
+			if (FMath::RadiansToDegrees(Angle) < 30)
+			{
+				return Target;
+			}
+		}
+	}
+
+	return nullptr;
+}

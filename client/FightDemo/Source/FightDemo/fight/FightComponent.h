@@ -9,6 +9,7 @@
 #include "FightDemo/game/FightInstance.h"
 #include "FightComponent.generated.h"
 
+class AGameFightCharacter;
 enum class EInputEnum : uint8;
 
 
@@ -104,6 +105,7 @@ public:
 
 
 	void PlaySkill(FAttackAnimTable* SkillToPlay);
+	void PlayBeAttackSkill(FAttackAnimTable* SkillToPlay);
 
 	virtual void OnAnimNotify(UAnimNotify * Notify);
 	virtual void OnAnimNotifyState(UAnimNotifyState * NotifyState, bool bStart);
@@ -116,6 +118,8 @@ public:
 	void SetPlayerActionState(EPlayerState Type , bool Value = true) const;
 	bool GetPlayerActionState(EPlayerState Type) const;
 
+	// 攻击玩家
+	AGameFightCharacter* GetAttackCharacter();
 
 private:
 	void CheckAttack();
@@ -131,8 +135,9 @@ private:
 
 	TArray<FAttackAnimTable*> AttackAnimTableArray;
 
-	UAnimMontage* MyMontage1;
-	UAnimMontage* MyMontage2;
-	UAnimMontage* MyMontage3;
-	UAnimMontage* MyMontage4;
+	FAttackAnimTable* CurrentPlayAnimTable;
+
+	int blockNum;
+
+
 };
