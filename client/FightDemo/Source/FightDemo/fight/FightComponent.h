@@ -9,6 +9,7 @@
 #include "FightDemo/game/FightInstance.h"
 #include "FightComponent.generated.h"
 
+class UGameAnimInstance;
 class AGameFightCharacter;
 enum class EInputEnum : uint8;
 
@@ -35,33 +36,6 @@ public:
 	bool IsNewCheck;
 };
 
-
-// 记录技能使用结构
-UCLASS(Blueprintable)
-class USkillActionInfo : public UFBaseTimeNode
-{
-	GENERATED_BODY()
-public:
-	virtual void ResetData() override
-	{
-		UFBaseTimeNode::ResetData();
-	}
-
-	virtual void CopyData(const UFBaseTimeNode& OBJ, const bool bCopyId = false) override
-	{
-		UFBaseTimeNode::CopyData(OBJ, bCopyId);
-	}
-
-	virtual FString ToString() const override
-	{
-		const auto BaseInfo = UFBaseTimeNode::ToString();
-		return BaseInfo + FString::Format(
-		TEXT("%s"),
-		{ "" }
-	);
-	}
-
-};
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class FIGHTDEMO_API UFightComponent : public UActorComponent
@@ -102,8 +76,6 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
-	void CheckActionTimeLine(int64 CurrentTime, float DeltaTime) const;
-
 	UFUNCTION(BlueprintCallable)
 	void AddInput(EInputEnum inputEnum);
 
@@ -126,9 +98,9 @@ public:
 	// 攻击玩家
 	AGameFightCharacter* GetAttackCharacter();
 
+
 	// 闪避
 	void PlayDoge();
-	bool IsSkillPlay();
 
 private:
 	void CheckAttack();
@@ -160,6 +132,24 @@ private:
 	int HPNum;
 
 
+	UPROPERTY()
+	AGameFightCharacter* OwnCharacterPtr;
+
+	AGameFightCharacter* GetOwnCharacter();
+
+	UPROPERTY()
+	UGameAnimInstance* OwnAnimInstance;
+	UGameAnimInstance* GetAnimInstance();
+
+	float PlayAnimMontage(class UAnimMontage* AnimMontage,
+		float InPlayRate, FName StartSectionName,
+		EMontagePlayReturnType ReturnValueType = EMontagePlayReturnType::MontageLength);
 
 
+	FOnMontageEnded EndDelegate;
+	FOnMontageBlendingOutStarted BlendingOutDelegate;
+
+	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	void OnMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted);
+	void OnMontagePlayerEnd(UAnimMontage* Montage, bool bInterrupted);
 };

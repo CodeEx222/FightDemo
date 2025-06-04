@@ -184,3 +184,31 @@ bool TFightTimeLine<T>::Add(std::shared_ptr<UFBaseTimeNode> OBJ)
 
 	return true;
 }
+
+
+// 记录技能使用结构
+UCLASS(Blueprintable)
+class USkillActionInfo : public UFBaseTimeNode
+{
+	GENERATED_BODY()
+public:
+	virtual void ResetData() override
+	{
+		UFBaseTimeNode::ResetData();
+	}
+
+	virtual void CopyData(const UFBaseTimeNode& OBJ, const bool bCopyId = false) override
+	{
+		UFBaseTimeNode::CopyData(OBJ, bCopyId);
+	}
+
+	virtual FString ToString() const override
+	{
+		const auto BaseInfo = UFBaseTimeNode::ToString();
+		return BaseInfo + FString::Format(
+		TEXT("%s"),
+		{ "" }
+	);
+	}
+
+};

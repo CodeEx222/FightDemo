@@ -9,6 +9,56 @@
 #include "Kismet/GameplayStatics.h"
 
 
+AGameFightCharacter* UFightComponent::GetOwnCharacter()
+{
+	if (OwnCharacterPtr == nullptr)
+	{
+		OwnCharacterPtr = Cast<AGameFightCharacter>(GetOwner());
+	}
+
+	check(OwnCharacterPtr != nullptr);
+
+	return OwnCharacterPtr;
+}
+
+UGameAnimInstance* UFightComponent::GetAnimInstance()
+{
+	if (OwnAnimInstance == nullptr)
+	{
+		const auto Mesh = GetOwnCharacter()->GetMesh();
+		UAnimInstance * AnimInstance = Mesh? Mesh->GetAnimInstance() : nullptr;
+		check(AnimInstance != nullptr);
+		OwnAnimInstance = Cast<UGameAnimInstance>(AnimInstance);
+	}
+
+	check(OwnAnimInstance != nullptr);
+
+	return OwnAnimInstance;
+}
+
+float UFightComponent::PlayAnimMontage(class UAnimMontage* AnimMontage,
+	const float InPlayRate, const FName StartSectionName, const EMontagePlayReturnType ReturnValueType)
+{
+	if(UAnimInstance * AnimInstance = GetAnimInstance(); AnimMontage && AnimInstance )
+	{
+		float const Duration = AnimInstance->Montage_Play(AnimMontage, InPlayRate,ReturnValueType);
+
+		if (Duration > 0.f)
+		{
+			// Start at a given Section.
+			if( StartSectionName != NAME_None )
+			{
+				AnimInstance->Montage_JumpToSection(StartSectionName, AnimMontage);
+			}
+
+			return Duration;
+		}
+	}
+
+	return 0.f;
+}
+
+
 // Sets default values for this component's properties
 UFightComponent::UFightComponent()
 {
@@ -23,6 +73,7 @@ UFightComponent::UFightComponent()
 
 
 
+
 // Called when the game starts
 void UFightComponent::BeginPlay()
 {
@@ -31,18 +82,21 @@ void UFightComponent::BeginPlay()
 	// ...
 	//FightTimeLineObj = new TFightTimeLine<USkillActionInfo>();
 
+	const auto AnimInstance = GetAnimInstance();
 
 
-	const auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
-	if (OwnCharacterObj == nullptr)
+	if (!EndDelegate.IsBound())
 	{
-		return;
+		EndDelegate.BindUObject(this, &UFightComponent::OnMontageEnded);
+		AnimInstance->Montage_SetEndDelegate(EndDelegate);
 	}
-	const auto AnimInstance = Cast<UGameAnimInstance>(OwnCharacterObj->GetMesh()->GetAnimInstance());
-	if (AnimInstance == nullptr)
+
+	if (!BlendingOutDelegate.IsBound())
 	{
-		return;
+		BlendingOutDelegate.BindUObject(this, &UFightComponent::OnMontageBlendingOut);
+		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate);
 	}
+
 
 
 	// 可以攻击
@@ -141,83 +195,21 @@ void UFightComponent::AddInput(EInputEnum inputEnum)
 }
 
 
-void UFightComponent::CheckActionTimeLine(int64 CurrentTime, float DeltaTime) const
-{
-	// 获取当前角色
-	//auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
-
-	// if (FightTimeLineObj->GetSize() <= 0)
-	// {
-	// 	return;
-	// }
-	//
-	//
-	// // 动作Line 逻辑处理
-	// auto CheckActionPtr = FightTimeLineObj->GetFront();
-	// while (CheckActionPtr != nullptr && CheckActionPtr->ActionTime <= CurrentTime)
-	// {
-	//
-	// 	switch (CheckActionPtr->ActionLineState)
-	// 	{
-	// 	case EActionLineState::SkillStart:
-	// 		{
-	// 			//检测状态后播放技能
-	// 		}
-	// 		break;
-	// 	default:
-	// 		checkNoEntry();
-	// 		break;
-	// 	}
-	//
-	// 	// 循环检测下一个node
-	// 	if (CheckActionPtr != nullptr)
-	// 	{
-	// 		FightTimeLineObj->PopById(CheckActionPtr->NodeId);
-	// 	}
-	// 	CheckActionPtr = FightTimeLineObj->GetFront();
-	// }
-
-}
-
-
 void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 {
-	const auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
-	if (OwnCharacterObj == nullptr || SkillToPlay == nullptr)
-	{
-		return;
-	}
-	const auto AnimInstance = Cast<UGameAnimInstance>(OwnCharacterObj->GetMesh()->GetAnimInstance());
-	if (AnimInstance == nullptr)
-	{
-		return;
-	}
-
 	InSkillToPlay = *SkillToPlay;
 	// 要播放的动画
-	const auto anim = SkillToPlay->ActionAnimMontage;
-	const auto PlayMontage = anim.LoadSynchronous();
+	const auto Anim = SkillToPlay->ActionAnimMontage;
+	const auto PlayMontage = Anim.LoadSynchronous();
 
-	AnimInstance->PlayFightMontage(PlayMontage,1,0,FName("Start"), true);
-
-
-
-
-
+	PlayAnimMontage(PlayMontage,1,FName("Start"));
+	// 设置攻击状态
+	GameCharaterState = ECharaterState::CharaterState_Attacking;
 }
 
 void UFightComponent::PlayBeAttackSkill(FAttackAnimTable* SkillToPlay)
 {
-	const auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
-	if (OwnCharacterObj == nullptr || SkillToPlay == nullptr)
-	{
-		return;
-	}
-	const auto AnimInstance = Cast<UGameAnimInstance>(OwnCharacterObj->GetMesh()->GetAnimInstance());
-	if (AnimInstance == nullptr)
-	{
-		return;
-	}
+	const auto AnimInstance = GetAnimInstance();
 
 	// 要播放的动画
 	const auto anim = SkillToPlay->BeAttackAnimMontage;
@@ -238,28 +230,19 @@ void UFightComponent::PlayBeAttackSkill(FAttackAnimTable* SkillToPlay)
 
 void UFightComponent::PlayBlockAttackSkill(FAttackAnimTable* SkillToPlay)
 {
-	const auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
-	if (OwnCharacterObj == nullptr || SkillToPlay == nullptr)
-	{
-		return;
-	}
-	const auto AnimInstance = Cast<UGameAnimInstance>(OwnCharacterObj->GetMesh()->GetAnimInstance());
-	if (AnimInstance == nullptr)
-	{
-		return;
-	}
+	const auto AnimInstance = GetAnimInstance();
 
 	// 要播放的动画
-	const auto anim = SkillToPlay->BlockAttackAnimMontage;
+	const auto AnimArray = SkillToPlay->BlockAttackAnimMontage;
 	// 随机一个动画
-	if (anim.Num() == 0)
+	if (AnimArray.Num() == 0)
 	{
 		return;
 	}
-	const int32 RandomIndex = FMath::RandRange(0, anim.Num() - 1);
-	const auto animMontage = anim[RandomIndex];
+	const int32 RandomIndex = FMath::RandRange(0, AnimArray.Num() - 1);
+	const auto AnimMontage = AnimArray[RandomIndex];
 
-	const auto PlayMontage = animMontage.LoadSynchronous();
+	const auto PlayMontage = AnimMontage.LoadSynchronous();
 
 	AnimInstance->PlayFightMontage(PlayMontage,1,0,FName("Start"), true);
 
@@ -269,16 +252,7 @@ void UFightComponent::PlayBlockAttackSkill(FAttackAnimTable* SkillToPlay)
 
 void UFightComponent::PlayDoge()
 {
-	const auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
-	if (OwnCharacterObj == nullptr || DogeAnimMontage == nullptr)
-	{
-		return;
-	}
-	const auto AnimInstance = Cast<UGameAnimInstance>(OwnCharacterObj->GetMesh()->GetAnimInstance());
-	if (AnimInstance == nullptr)
-	{
-		return;
-	}
+	const auto AnimInstance = GetAnimInstance();
 
 	bool bIsPlaying = AnimInstance->Montage_IsActive(nullptr);
 
@@ -288,29 +262,10 @@ void UFightComponent::PlayDoge()
 	}
 
 	// 要播放的动画
-	const auto anim = DogeAnimMontage;
-	const auto PlayMontage = anim.LoadSynchronous();
+	const auto Anim = DogeAnimMontage;
+	const auto PlayMontage = Anim.LoadSynchronous();
 
 	AnimInstance->PlayFightMontage(PlayMontage,1,0,FName("Start"), true);
-}
-
-bool UFightComponent::IsSkillPlay()
-{
-	const auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
-	if (OwnCharacterObj == nullptr || DogeAnimMontage == nullptr)
-	{
-		return false;
-	}
-	const auto AnimInstance = Cast<UGameAnimInstance>(OwnCharacterObj->GetMesh()->GetAnimInstance());
-	if (AnimInstance == nullptr)
-	{
-		return false;
-	}
-
-	bool bIsPlaying = AnimInstance->Montage_IsActive(nullptr);
-	// UAnimMontage* CurrentMontage = AnimInstance->GetCurrentActiveMontage();
-	return bIsPlaying;
-
 }
 
 
@@ -564,6 +519,28 @@ AGameFightCharacter* UFightComponent::GetAttackCharacter()
 
 	return nullptr;
 }
+
+
+#pragma region 动画结束通知
+
+void UFightComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	OnMontagePlayerEnd(Montage, bInterrupted);
+}
+
+void UFightComponent::OnMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted)
+{
+	OnMontagePlayerEnd(Montage, bInterrupted);
+}
+
+void UFightComponent::OnMontagePlayerEnd(UAnimMontage* Montage, bool bInterrupted)
+{
+
+}
+
+#pragma endregion
+
+
 
 
 // 循环动画的所有通知, 注册到时间线当中

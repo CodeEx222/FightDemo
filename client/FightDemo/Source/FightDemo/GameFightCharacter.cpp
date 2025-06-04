@@ -168,6 +168,41 @@ void AGameFightCharacter::MontagePlayerEnd()
 	canFanJi = false;
 }
 
+
+bool AGameFightCharacter::IsAttackPlayer(AGameFightCharacter* target)
+{
+	auto selfPos = this->GetActorLocation();
+	auto targetPos = target->GetActorLocation();
+
+	auto dir = targetPos - selfPos;
+
+
+	// 计算距离
+	auto len = dir.Length();
+	if (len < 200)
+	{
+		dir.Normalize();
+		auto selfVertor = this->GetActorForwardVector();
+
+		float angle = acos(FVector::DotProduct(selfVertor, dir)/ (selfVertor.Size()*selfVertor.Size()) ) * 180 / PI;
+
+		if (angle <= 40)
+		{
+			return true;
+		}
+
+	}
+
+	return false;
+
+}
+
+
+
+
+
+
+
 // void AGameFightCharacter::Anim_Notify(EAnimNotifyState notifyState)
 // {
 // 	switch (notifyState)
@@ -221,33 +256,5 @@ void AGameFightCharacter::MontagePlayerEnd()
 // 	}
 // }
 //
-
-bool AGameFightCharacter::IsAttackPlayer(AGameFightCharacter* target)
-{
-	auto selfPos = this->GetActorLocation();
-	auto targetPos = target->GetActorLocation();
-
-	auto dir = targetPos - selfPos;
-
-
-	// 计算距离
-	auto len = dir.Length();
-	if (len < 200)
-	{
-		dir.Normalize();
-		auto selfVertor = this->GetActorForwardVector();
-
-		float angle = acos(FVector::DotProduct(selfVertor, dir)/ (selfVertor.Size()*selfVertor.Size()) ) * 180 / PI;
-
-		if (angle <= 40)
-		{
-			return true;
-		}
-
-	}
-
-	return false;
-
-}
 
 
