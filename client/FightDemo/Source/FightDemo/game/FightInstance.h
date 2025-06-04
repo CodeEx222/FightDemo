@@ -44,7 +44,7 @@ enum class EPlayerState : uint8
 	InComboNext UMETA(DisplayName="是否准备播放下一个战斗"),
 	CanAttack UMETA(DisplayName="可以攻击"),
 	CanRecordInput UMETA(DisplayName="可以记录输入"),
-
+	BeBlockAttack UMETA(DisplayName="被格挡攻击"),
 };
 
 // 输入标识
@@ -59,6 +59,7 @@ enum class EInputEnum : uint8
 	NormalAttack  UMETA(DisplayName="轻击")  ,
 	HeavyAttack  UMETA(DisplayName="重击")  ,
 	Defend  UMETA(DisplayName="防御")  ,
+	Doge  UMETA(DisplayName="闪避")  ,
 };
 
 USTRUCT(BlueprintType)
@@ -84,15 +85,19 @@ struct FAttackAnimTable : public  FTableRowBase
 
 	// 受击对象
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSoftObjectPtr<UAnimMontage> BeAttackAnimMontage;
+	TArray<TSoftObjectPtr<UAnimMontage>> BeAttackAnimMontage;
 
 	// 格挡对象
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSoftObjectPtr<UAnimMontage> BlockAttackAnimMontage;
+	TArray<TSoftObjectPtr<UAnimMontage>> BlockAttackAnimMontage;
 
 	// 消除格挡值
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int AttackBlockValue = 0;
+
+	// 消除血量值
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int AttackHPValue = 0;
 };
 
 /**
@@ -102,4 +107,14 @@ UCLASS()
 class FIGHTDEMO_API UFightInstance : public UGameInstance
 {
 	GENERATED_BODY()
+
+
+public:
+	virtual void Init() override;
+
+
+	UPROPERTY()
+	UDataTable* SkillDataTable;
+
+	TArray<FAttackAnimTable*> AttackAnimTableArray;
 };

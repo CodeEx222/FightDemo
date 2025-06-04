@@ -95,6 +95,13 @@ public:
 
 	bool IsAttackPlayer(AGameFightCharacter* target);
 
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void HpChangeView(float HpValue,float MaxValue);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void BlockChangeView(float HpValue,float MaxValue);
+
 };
 
 

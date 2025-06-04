@@ -29,21 +29,9 @@ void UFightComponent::BeginPlay()
 	Super::BeginPlay();
 
 	// ...
-	FightTimeLineObj = new TFightTimeLine<USkillActionInfo>();
+	//FightTimeLineObj = new TFightTimeLine<USkillActionInfo>();
 
-	SkillDataTable = Cast<UDataTable>(LoadObject<UObject>(nullptr,
-		TEXT("/Game/Game/data/AttackTable.AttackTable")));
-	if (SkillDataTable) {
-		// 循环表
-		TArray<FName> RowNames = SkillDataTable->GetRowNames();
-		for (FName RowName : RowNames) {
-			// 获取行数据
-			FAttackAnimTable* SkillActionInfo = SkillDataTable->FindRow<FAttackAnimTable>(RowName, TEXT(""));
-			if (SkillActionInfo) {
-				AttackAnimTableArray.Add(SkillActionInfo);
-			}
-		}
-	}
+
 
 	const auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
 	if (OwnCharacterObj == nullptr)
@@ -97,7 +85,6 @@ void UFightComponent::AddInput(EInputEnum inputEnum)
 		break;
 	case EInputEnum::NormalAttack:
 	case EInputEnum::HeavyAttack:
-	case EInputEnum::Defend:
 		// 判断当前人物状态是否可以接受指令
 		if ( GetPlayerActionState(EPlayerState::CanRecordInput))
 		{
@@ -111,7 +98,45 @@ void UFightComponent::AddInput(EInputEnum inputEnum)
 		}
 
 		break;
+	case EInputEnum::Defend:
+		// 防御输入 打印日志
+		//UE_LOG(LogTemp, Warning, TEXT("Defend Input Received"));
+		if (!IsSkillPlay())
+		{
+			// 假如对面是进攻状态,看是否能进入防御反击
+			bool isPlayAttack = false;
+			auto target = GetAttackCharacter();
+			if (target != nullptr)
+			{
+				// 判断目标对象是否
+				if (auto fightComponent = target->GetComponentByClass<UFightComponent>(); fightComponent != nullptr)
+				{
+					if (fightComponent->GetPlayerActionState(EPlayerState::BeBlockAttack))
+					{
+						isPlayAttack = true;
+						// 播放反击动
+						fightComponent->PlayBeAttackSkill(CurrentPlayAnimTable);
+						PlayBlockAttackSkill(&fightComponent->InSkillToPlay);
+					}
+				}
+			}
+
+			if (!isPlayAttack)
+			{
+				// 格挡
+			}
+
+		}
+		break;
+	case EInputEnum::Doge:
+		{
+			PlayDoge();
+		}
+
+		break;
 	}
+
+
 
 }
 
@@ -121,36 +146,36 @@ void UFightComponent::CheckActionTimeLine(int64 CurrentTime, float DeltaTime) co
 	// 获取当前角色
 	//auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
 
-	if (FightTimeLineObj->GetSize() <= 0)
-	{
-		return;
-	}
-
-
-	// 动作Line 逻辑处理
-	auto CheckActionPtr = FightTimeLineObj->GetFront();
-	while (CheckActionPtr != nullptr && CheckActionPtr->ActionTime <= CurrentTime)
-	{
-
-		switch (CheckActionPtr->ActionLineState)
-		{
-		case EActionLineState::SkillStart:
-			{
-				//检测状态后播放技能
-			}
-			break;
-		default:
-			checkNoEntry();
-			break;
-		}
-
-		// 循环检测下一个node
-		if (CheckActionPtr != nullptr)
-		{
-			FightTimeLineObj->PopById(CheckActionPtr->NodeId);
-		}
-		CheckActionPtr = FightTimeLineObj->GetFront();
-	}
+	// if (FightTimeLineObj->GetSize() <= 0)
+	// {
+	// 	return;
+	// }
+	//
+	//
+	// // 动作Line 逻辑处理
+	// auto CheckActionPtr = FightTimeLineObj->GetFront();
+	// while (CheckActionPtr != nullptr && CheckActionPtr->ActionTime <= CurrentTime)
+	// {
+	//
+	// 	switch (CheckActionPtr->ActionLineState)
+	// 	{
+	// 	case EActionLineState::SkillStart:
+	// 		{
+	// 			//检测状态后播放技能
+	// 		}
+	// 		break;
+	// 	default:
+	// 		checkNoEntry();
+	// 		break;
+	// 	}
+	//
+	// 	// 循环检测下一个node
+	// 	if (CheckActionPtr != nullptr)
+	// 	{
+	// 		FightTimeLineObj->PopById(CheckActionPtr->NodeId);
+	// 	}
+	// 	CheckActionPtr = FightTimeLineObj->GetFront();
+	// }
 
 }
 
@@ -168,6 +193,7 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 		return;
 	}
 
+	InSkillToPlay = *SkillToPlay;
 	// 要播放的动画
 	const auto anim = SkillToPlay->ActionAnimMontage;
 	const auto PlayMontage = anim.LoadSynchronous();
@@ -176,42 +202,7 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 
 
 
-	// 循环动画的所有通知, 注册到时间线当中
-	// for (int i = 0; i < PlayMontage->Notifies.Num(); i++)
-	// {
-	// 	auto notify = PlayMontage->Notifies[i];
-	// 	if (notify.Notify != nullptr)
-	// 	{
-	// 		auto notifyState = Cast<UFightAnimNotify>(notify.Notify);
-	// 		if (notifyState != nullptr)
-	// 		{
-	// 			auto notifyTime = notify.GetTime();
-	// 			auto notifyEnum = notifyState->AnimEnum;
-	//
-	// 			auto skillActionInfo = FightTimeLineObj->GetFreeObj(true);
-	// 			skillActionInfo->NodeId = NodeIdGenFactory::GenId();
-	// 			skillActionInfo->ActionTime = notifyTime;
-	// 			skillActionInfo->ActionLineState = EActionLineState::SkillStart;
-	// 			FightTimeLineObj->Add(skillActionInfo);
-	// 		}
-	// 	}
-	// 	else if (notify.NotifyStateClass != nullptr)
-	// 	{
-	// 		auto notifyState = Cast<UFightAnimNotifyState>(notify.NotifyStateClass);
-	// 		if (notifyState != nullptr)
-	// 		{
-	// 			auto notifyTime = notify.GetTime();
-	// 			auto notifyEnum = notifyState->AnimEnum;
-	//
-	// 			auto skillActionInfo = FightTimeLineObj->GetFreeObj(true);
-	// 			skillActionInfo->NodeId = NodeIdGenFactory::GenId();
-	// 			skillActionInfo->ActionTime = notifyTime;
-	// 			skillActionInfo->ActionLineState = EActionLineState::SkillStart;
-	// 			FightTimeLineObj->Add(skillActionInfo);
-	// 		}
-	// 	}
-	//
-	// }
+
 
 }
 
@@ -230,12 +221,98 @@ void UFightComponent::PlayBeAttackSkill(FAttackAnimTable* SkillToPlay)
 
 	// 要播放的动画
 	const auto anim = SkillToPlay->BeAttackAnimMontage;
-	const auto PlayMontage = anim.LoadSynchronous();
+	// 随机一个动画
+	if (anim.Num() == 0)
+	{
+		return;
+	}
+	const int32 RandomIndex = FMath::RandRange(0, anim.Num() - 1);
+	const auto animMontage = anim[RandomIndex];
+
+	const auto PlayMontage = animMontage.LoadSynchronous();
 
 	AnimInstance->PlayFightMontage(PlayMontage,1,0,FName("Start"), true);
 
 
 }
+
+void UFightComponent::PlayBlockAttackSkill(FAttackAnimTable* SkillToPlay)
+{
+	const auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
+	if (OwnCharacterObj == nullptr || SkillToPlay == nullptr)
+	{
+		return;
+	}
+	const auto AnimInstance = Cast<UGameAnimInstance>(OwnCharacterObj->GetMesh()->GetAnimInstance());
+	if (AnimInstance == nullptr)
+	{
+		return;
+	}
+
+	// 要播放的动画
+	const auto anim = SkillToPlay->BlockAttackAnimMontage;
+	// 随机一个动画
+	if (anim.Num() == 0)
+	{
+		return;
+	}
+	const int32 RandomIndex = FMath::RandRange(0, anim.Num() - 1);
+	const auto animMontage = anim[RandomIndex];
+
+	const auto PlayMontage = animMontage.LoadSynchronous();
+
+	AnimInstance->PlayFightMontage(PlayMontage,1,0,FName("Start"), true);
+
+
+}
+
+
+void UFightComponent::PlayDoge()
+{
+	const auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
+	if (OwnCharacterObj == nullptr || DogeAnimMontage == nullptr)
+	{
+		return;
+	}
+	const auto AnimInstance = Cast<UGameAnimInstance>(OwnCharacterObj->GetMesh()->GetAnimInstance());
+	if (AnimInstance == nullptr)
+	{
+		return;
+	}
+
+	bool bIsPlaying = AnimInstance->Montage_IsActive(nullptr);
+
+	if (bIsPlaying && GetPlayerActionState(EPlayerState::CanAttack))
+	{
+		return;
+	}
+
+	// 要播放的动画
+	const auto anim = DogeAnimMontage;
+	const auto PlayMontage = anim.LoadSynchronous();
+
+	AnimInstance->PlayFightMontage(PlayMontage,1,0,FName("Start"), true);
+}
+
+bool UFightComponent::IsSkillPlay()
+{
+	const auto OwnCharacterObj = Cast<AGameFightCharacter>(GetOwner());
+	if (OwnCharacterObj == nullptr || DogeAnimMontage == nullptr)
+	{
+		return false;
+	}
+	const auto AnimInstance = Cast<UGameAnimInstance>(OwnCharacterObj->GetMesh()->GetAnimInstance());
+	if (AnimInstance == nullptr)
+	{
+		return false;
+	}
+
+	bool bIsPlaying = AnimInstance->Montage_IsActive(nullptr);
+	// UAnimMontage* CurrentMontage = AnimInstance->GetCurrentActiveMontage();
+	return bIsPlaying;
+
+}
+
 
 void UFightComponent::CheckAttack()
 {
@@ -285,9 +362,11 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 			if (target != nullptr)
 			{
 				// 判断目标对象是否
-				if (auto fightComponent = target->GetComponentByClass<UFightComponent>(); fightComponent != nullptr)
+				if (auto TargetFightComponent = target->GetComponentByClass<UFightComponent>(); TargetFightComponent != nullptr)
 				{
-					fightComponent->PlayBeAttackSkill(CurrentPlayAnimTable);
+					TargetFightComponent->PlayBeAttackSkill(CurrentPlayAnimTable);
+					TargetFightComponent->HPNum -= InSkillToPlay.AttackHPValue;
+					target->HpChangeView(TargetFightComponent->HPNum,100);
 				}
 			}
 
@@ -295,9 +374,9 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 		}
 	case EFightAnimNotify::AttackNext:
 		{
-				// 可以播放下次攻击
-				SetPlayerActionState(EPlayerState::CanAttack);
-				CheckAttack();
+			// 可以播放下次攻击
+			SetPlayerActionState(EPlayerState::CanAttack);
+			CheckAttack();
 		}
 	default: ;
 	}
@@ -342,10 +421,11 @@ void UFightComponent::OnAnimNotifyState(UAnimNotifyState * NotifyState, bool bSt
 
 		break;
 	case EFightAnimStateNotify::FanJiState:
-			// 反击区间
+		// 反击区间
+		SetPlayerActionState(EPlayerState::BeBlockAttack, bStart);
 		break;
 	case EFightAnimStateNotify::InoputState:
-			// 输入区间
+		// 输入区间
 		SetPlayerActionState(EPlayerState::CanRecordInput, true);
 		break;
 	}
@@ -380,9 +460,12 @@ FAttackAnimTable* UFightComponent::CheckInput()
 	}
 
 	// 循环所有的出招表,看是否有符合出招的招式
-	for (int i = 0; i < AttackAnimTableArray.Num(); i++)
+	// 获取GameInstance
+	const auto GameInstance = Cast<UFightInstance>(GetWorld()->GetGameInstance());
+
+	for (int i = 0; i < GameInstance->AttackAnimTableArray.Num(); i++)
 	{
-		auto AnimTable = AttackAnimTableArray[i];
+		const auto AnimTable = GameInstance->AttackAnimTableArray[i];
 		bool bIsfind = false;
 
 		// if (AnimTable->MoveInputs.Num() > 0 && MoveInputArray.Num() > 0)
@@ -481,3 +564,41 @@ AGameFightCharacter* UFightComponent::GetAttackCharacter()
 
 	return nullptr;
 }
+
+
+// 循环动画的所有通知, 注册到时间线当中
+// for (int i = 0; i < PlayMontage->Notifies.Num(); i++)
+// {
+// 	auto notify = PlayMontage->Notifies[i];
+// 	if (notify.Notify != nullptr)
+// 	{
+// 		auto notifyState = Cast<UFightAnimNotify>(notify.Notify);
+// 		if (notifyState != nullptr)
+// 		{
+// 			auto notifyTime = notify.GetTime();
+// 			auto notifyEnum = notifyState->AnimEnum;
+//
+// 			auto skillActionInfo = FightTimeLineObj->GetFreeObj(true);
+// 			skillActionInfo->NodeId = NodeIdGenFactory::GenId();
+// 			skillActionInfo->ActionTime = notifyTime;
+// 			skillActionInfo->ActionLineState = EActionLineState::SkillStart;
+// 			FightTimeLineObj->Add(skillActionInfo);
+// 		}
+// 	}
+// 	else if (notify.NotifyStateClass != nullptr)
+// 	{
+// 		auto notifyState = Cast<UFightAnimNotifyState>(notify.NotifyStateClass);
+// 		if (notifyState != nullptr)
+// 		{
+// 			auto notifyTime = notify.GetTime();
+// 			auto notifyEnum = notifyState->AnimEnum;
+//
+// 			auto skillActionInfo = FightTimeLineObj->GetFreeObj(true);
+// 			skillActionInfo->NodeId = NodeIdGenFactory::GenId();
+// 			skillActionInfo->ActionTime = notifyTime;
+// 			skillActionInfo->ActionLineState = EActionLineState::SkillStart;
+// 			FightTimeLineObj->Add(skillActionInfo);
+// 		}
+// 	}
+//
+// }

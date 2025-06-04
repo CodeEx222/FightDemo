@@ -46,6 +46,7 @@ enum class EFightAnimStateNotify : uint8
 	PlayState UMETA(DisplayName="连击有效区间")  ,
 	FanJiState UMETA(DisplayName="反击区间")  ,
 	InoputState UMETA(DisplayName="输入区间")  ,
+	WuDiState UMETA(DisplayName="无敌区间")  ,
 };
 
 UCLASS(Blueprintable)

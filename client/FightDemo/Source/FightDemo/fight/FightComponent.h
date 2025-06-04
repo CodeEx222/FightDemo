@@ -86,6 +86,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "人物状态"))
 	ECharaterState GameCharaterState;
 
+	// 闪避对象
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSoftObjectPtr<UAnimMontage> DogeAnimMontage;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -106,6 +110,7 @@ public:
 
 	void PlaySkill(FAttackAnimTable* SkillToPlay);
 	void PlayBeAttackSkill(FAttackAnimTable* SkillToPlay);
+	void PlayBlockAttackSkill(FAttackAnimTable* SkillToPlay);
 
 	virtual void OnAnimNotify(UAnimNotify * Notify);
 	virtual void OnAnimNotifyState(UAnimNotifyState * NotifyState, bool bStart);
@@ -121,6 +126,10 @@ public:
 	// 攻击玩家
 	AGameFightCharacter* GetAttackCharacter();
 
+	// 闪避
+	void PlayDoge();
+	bool IsSkillPlay();
+
 private:
 	void CheckAttack();
 	FAttackAnimTable* CheckInput();
@@ -129,15 +138,28 @@ private:
 	std::shared_ptr<std::bitset<32>> PlayerActionStateBitset;
 
 	// 保存 行动时间线  结束时间线  行动结构内存池的结构
-	TFightTimeLine<USkillActionInfo>* FightTimeLineObj;
+	//TFightTimeLine<USkillActionInfo>* FightTimeLineObj;
 
-	UDataTable* SkillDataTable;
 
-	TArray<FAttackAnimTable*> AttackAnimTableArray;
+
+	UPROPERTY()
+	FAttackAnimTable InSkillToPlay;
+
+
 
 	FAttackAnimTable* CurrentPlayAnimTable;
 
-	int blockNum;
+	// 格挡数值
+	int BlockNum;
+	// 格挡回复速度
+	int BlockRecoverSpeed;
+	// 格挡恢复开始时间
+	int BlockRecoverStartTime;
+
+	// 血量数值
+	int HPNum;
+
+
 
 
 };
