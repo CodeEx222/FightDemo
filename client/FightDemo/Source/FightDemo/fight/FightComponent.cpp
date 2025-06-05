@@ -37,13 +37,11 @@ UGameAnimInstance* UFightComponent::GetAnimInstance()
 }
 
 float UFightComponent::PlayAnimMontage(class UAnimMontage* AnimMontage,
-	const float InPlayRate, const FName StartSectionName, const EMontagePlayReturnType ReturnValueType)
+                                       const float InPlayRate, const FName StartSectionName, const EMontagePlayReturnType ReturnValueType)
 {
 	if(UAnimInstance * AnimInstance = GetAnimInstance(); AnimMontage && AnimInstance )
 	{
-		float const Duration = AnimInstance->Montage_Play(AnimMontage, InPlayRate,ReturnValueType);
-
-		if (Duration > 0.f)
+		if (float const Duration = AnimInstance->Montage_Play(AnimMontage, InPlayRate,ReturnValueType); Duration > 0.f)
 		{
 			// Start at a given Section.
 			if( StartSectionName != NAME_None )
@@ -84,18 +82,8 @@ void UFightComponent::BeginPlay()
 
 	const auto AnimInstance = GetAnimInstance();
 
-
-	if (!EndDelegate.IsBound())
-	{
-		EndDelegate.BindUObject(this, &UFightComponent::OnMontageEnded);
-		AnimInstance->Montage_SetEndDelegate(EndDelegate);
-	}
-
-	if (!BlendingOutDelegate.IsBound())
-	{
-		BlendingOutDelegate.BindUObject(this, &UFightComponent::OnMontageBlendingOut);
-		AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate);
-	}
+	AnimInstance->OnMontageEnded.AddDynamic( this, &UFightComponent::OnMontageEnded);
+	AnimInstance->OnMontageBlendingOut.AddDynamic( this, &UFightComponent::OnMontageBlendingOut);
 
 
 
@@ -155,7 +143,7 @@ void UFightComponent::AddInput(EInputEnum inputEnum)
 	case EInputEnum::Defend:
 		// 防御输入 打印日志
 		//UE_LOG(LogTemp, Warning, TEXT("Defend Input Received"));
-		if (!IsSkillPlay())
+		if (GameCharaterState == ECharaterState::CharaterState_None)
 		{
 			// 假如对面是进攻状态,看是否能进入防御反击
 			bool isPlayAttack = false;
@@ -169,8 +157,8 @@ void UFightComponent::AddInput(EInputEnum inputEnum)
 					{
 						isPlayAttack = true;
 						// 播放反击动
-						fightComponent->PlayBeAttackSkill(CurrentPlayAnimTable);
-						PlayBlockAttackSkill(&fightComponent->InSkillToPlay);
+						fightComponent->PlayBeAttackSkill(CurrentAnimTable);
+						PlayBlockAttackSkill(fightComponent->CurrentAnimTable);
 					}
 				}
 			}
@@ -197,12 +185,12 @@ void UFightComponent::AddInput(EInputEnum inputEnum)
 
 void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 {
-	InSkillToPlay = *SkillToPlay;
+	CurrentAnimTable = SkillToPlay;
 	// 要播放的动画
 	const auto Anim = SkillToPlay->ActionAnimMontage;
 	const auto PlayMontage = Anim.LoadSynchronous();
 
-	PlayAnimMontage(PlayMontage,1,FName("Start"));
+	PlayAnimMontage(PlayMontage,1);
 	// 设置攻击状态
 	GameCharaterState = ECharaterState::CharaterState_Attacking;
 }
@@ -295,7 +283,6 @@ void UFightComponent::CheckAttack()
 	SetPlayerActionState(EPlayerState::InPlayAttack);
 
 	SetPlayerActionState(EPlayerState::CanAttack,false);
-	CurrentPlayAnimTable = SkillToPlay;
 	PlaySkill(SkillToPlay);
 }
 
@@ -319,8 +306,8 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 				// 判断目标对象是否
 				if (auto TargetFightComponent = target->GetComponentByClass<UFightComponent>(); TargetFightComponent != nullptr)
 				{
-					TargetFightComponent->PlayBeAttackSkill(CurrentPlayAnimTable);
-					TargetFightComponent->HPNum -= InSkillToPlay.AttackHPValue;
+					TargetFightComponent->PlayBeAttackSkill(CurrentAnimTable);
+					TargetFightComponent->HPNum -= CurrentAnimTable->AttackHPValue;
 					target->HpChangeView(TargetFightComponent->HPNum,100);
 				}
 			}
@@ -525,11 +512,13 @@ AGameFightCharacter* UFightComponent::GetAttackCharacter()
 
 void UFightComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
+	UE_LOG( LogTemp, Warning, TEXT("Montage Ended: %s, Interrupted: %d"), *Montage->GetName(), bInterrupted);
 	OnMontagePlayerEnd(Montage, bInterrupted);
 }
 
 void UFightComponent::OnMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted)
 {
+	UE_LOG( LogTemp, Warning, TEXT("Montage Blending Out: %s, Interrupted: %d"), *Montage->GetName(), bInterrupted);
 	OnMontagePlayerEnd(Montage, bInterrupted);
 }
 
@@ -543,39 +532,3 @@ void UFightComponent::OnMontagePlayerEnd(UAnimMontage* Montage, bool bInterrupte
 
 
 
-// 循环动画的所有通知, 注册到时间线当中
-// for (int i = 0; i < PlayMontage->Notifies.Num(); i++)
-// {
-// 	auto notify = PlayMontage->Notifies[i];
-// 	if (notify.Notify != nullptr)
-// 	{
-// 		auto notifyState = Cast<UFightAnimNotify>(notify.Notify);
-// 		if (notifyState != nullptr)
-// 		{
-// 			auto notifyTime = notify.GetTime();
-// 			auto notifyEnum = notifyState->AnimEnum;
-//
-// 			auto skillActionInfo = FightTimeLineObj->GetFreeObj(true);
-// 			skillActionInfo->NodeId = NodeIdGenFactory::GenId();
-// 			skillActionInfo->ActionTime = notifyTime;
-// 			skillActionInfo->ActionLineState = EActionLineState::SkillStart;
-// 			FightTimeLineObj->Add(skillActionInfo);
-// 		}
-// 	}
-// 	else if (notify.NotifyStateClass != nullptr)
-// 	{
-// 		auto notifyState = Cast<UFightAnimNotifyState>(notify.NotifyStateClass);
-// 		if (notifyState != nullptr)
-// 		{
-// 			auto notifyTime = notify.GetTime();
-// 			auto notifyEnum = notifyState->AnimEnum;
-//
-// 			auto skillActionInfo = FightTimeLineObj->GetFreeObj(true);
-// 			skillActionInfo->NodeId = NodeIdGenFactory::GenId();
-// 			skillActionInfo->ActionTime = notifyTime;
-// 			skillActionInfo->ActionLineState = EActionLineState::SkillStart;
-// 			FightTimeLineObj->Add(skillActionInfo);
-// 		}
-// 	}
-//
-// }

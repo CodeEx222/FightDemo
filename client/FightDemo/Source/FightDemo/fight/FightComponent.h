@@ -109,17 +109,6 @@ private:
 	// 动作状态指示
 	std::shared_ptr<std::bitset<32>> PlayerActionStateBitset;
 
-	// 保存 行动时间线  结束时间线  行动结构内存池的结构
-	//TFightTimeLine<USkillActionInfo>* FightTimeLineObj;
-
-
-
-	UPROPERTY()
-	FAttackAnimTable InSkillToPlay;
-
-
-
-	FAttackAnimTable* CurrentPlayAnimTable;
 
 	// 格挡数值
 	int BlockNum;
@@ -141,15 +130,17 @@ private:
 	UGameAnimInstance* OwnAnimInstance;
 	UGameAnimInstance* GetAnimInstance();
 
+	// 当前播放的动作表
+	FAttackAnimTable* CurrentAnimTable;
+
 	float PlayAnimMontage(class UAnimMontage* AnimMontage,
-		float InPlayRate, FName StartSectionName,
+		float InPlayRate, FName StartSectionName = NAME_None,
 		EMontagePlayReturnType ReturnValueType = EMontagePlayReturnType::MontageLength);
 
 
-	FOnMontageEnded EndDelegate;
-	FOnMontageBlendingOutStarted BlendingOutDelegate;
-
+	UFUNCTION()
 	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	UFUNCTION()
 	void OnMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted);
 	void OnMontagePlayerEnd(UAnimMontage* Montage, bool bInterrupted);
 };

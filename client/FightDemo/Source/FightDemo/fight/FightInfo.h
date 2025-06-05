@@ -212,3 +212,40 @@ public:
 	}
 
 };
+
+// 循环动画的所有通知, 注册到时间线当中
+// for (int i = 0; i < PlayMontage->Notifies.Num(); i++)
+// {
+// 	auto notify = PlayMontage->Notifies[i];
+// 	if (notify.Notify != nullptr)
+// 	{
+// 		auto notifyState = Cast<UFightAnimNotify>(notify.Notify);
+// 		if (notifyState != nullptr)
+// 		{
+// 			auto notifyTime = notify.GetTime();
+// 			auto notifyEnum = notifyState->AnimEnum;
+//
+// 			auto skillActionInfo = FightTimeLineObj->GetFreeObj(true);
+// 			skillActionInfo->NodeId = NodeIdGenFactory::GenId();
+// 			skillActionInfo->ActionTime = notifyTime;
+// 			skillActionInfo->ActionLineState = EActionLineState::SkillStart;
+// 			FightTimeLineObj->Add(skillActionInfo);
+// 		}
+// 	}
+// 	else if (notify.NotifyStateClass != nullptr)
+// 	{
+// 		auto notifyState = Cast<UFightAnimNotifyState>(notify.NotifyStateClass);
+// 		if (notifyState != nullptr)
+// 		{
+// 			auto notifyTime = notify.GetTime();
+// 			auto notifyEnum = notifyState->AnimEnum;
+//
+// 			auto skillActionInfo = FightTimeLineObj->GetFreeObj(true);
+// 			skillActionInfo->NodeId = NodeIdGenFactory::GenId();
+// 			skillActionInfo->ActionTime = notifyTime;
+// 			skillActionInfo->ActionLineState = EActionLineState::SkillStart;
+// 			FightTimeLineObj->Add(skillActionInfo);
+// 		}
+// 	}
+//
+// }
