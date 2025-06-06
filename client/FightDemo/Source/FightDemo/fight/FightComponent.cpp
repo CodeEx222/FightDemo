@@ -1,4 +1,4 @@
-// 
+//
 
 
 #include "FightComponent.h"
@@ -34,26 +34,6 @@ UGameAnimInstance* UFightComponent::GetAnimInstance()
 	check(OwnAnimInstance != nullptr);
 
 	return OwnAnimInstance;
-}
-
-float UFightComponent::PlayAnimMontage(class UAnimMontage* AnimMontage,
-                                       const float InPlayRate, const FName StartSectionName, const EMontagePlayReturnType ReturnValueType)
-{
-	if(UAnimInstance * AnimInstance = GetAnimInstance(); AnimMontage && AnimInstance )
-	{
-		if (float const Duration = AnimInstance->Montage_Play(AnimMontage, InPlayRate,ReturnValueType); Duration > 0.f)
-		{
-			// Start at a given Section.
-			if( StartSectionName != NAME_None )
-			{
-				AnimInstance->Montage_JumpToSection(StartSectionName, AnimMontage);
-			}
-
-			return Duration;
-		}
-	}
-
-	return 0.f;
 }
 
 
@@ -190,9 +170,24 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 	const auto Anim = SkillToPlay->ActionAnimMontage;
 	const auto PlayMontage = Anim.LoadSynchronous();
 
-	PlayAnimMontage(PlayMontage,1);
+
+
+	AnimPlayInstanceID++;
+	FOnMontageEnded EndDelegate;
+	FOnMontageBlendingOutStarted BlendingOutDelegate;
+	EndDelegate.BindUObject(this, &UFightComponent::OnMontagePlayEnd,AnimPlayInstanceID);
+	BlendingOutDelegate.BindUObject(this, &UFightComponent::OnMontagePlayBlendingOut,AnimPlayInstanceID);
+
+	UE_LOG(LogTemp, Warning, TEXT("Play Skill: %s, Anim: %s, ID: %d"),
+		*PlayMontage->GetName(), *Anim.GetAssetName(), AnimPlayInstanceID);
+	GetAnimInstance()->Montage_Stop(0);
+	GetAnimInstance()->PlayAnimMontage(PlayMontage,1);
+	GetAnimInstance()->Montage_SetEndDelegate(EndDelegate, PlayMontage);
+	GetAnimInstance()->Montage_SetBlendingOutDelegate(BlendingOutDelegate, PlayMontage);
 	// 设置攻击状态
 	GameCharaterState = ECharaterState::CharaterState_Attacking;
+	UE_LOG(LogTemp, Warning, TEXT("Play Skill End: %s, Anim: %s, ID: %d"),
+    		*PlayMontage->GetName(), *Anim.GetAssetName(), AnimPlayInstanceID);
 }
 
 void UFightComponent::PlayBeAttackSkill(FAttackAnimTable* SkillToPlay)
@@ -211,15 +206,13 @@ void UFightComponent::PlayBeAttackSkill(FAttackAnimTable* SkillToPlay)
 
 	const auto PlayMontage = animMontage.LoadSynchronous();
 
-	AnimInstance->PlayFightMontage(PlayMontage,1,0,FName("Start"), true);
+	GetAnimInstance()->PlayAnimMontage(PlayMontage);
 
 
 }
 
 void UFightComponent::PlayBlockAttackSkill(FAttackAnimTable* SkillToPlay)
 {
-	const auto AnimInstance = GetAnimInstance();
-
 	// 要播放的动画
 	const auto AnimArray = SkillToPlay->BlockAttackAnimMontage;
 	// 随机一个动画
@@ -232,7 +225,8 @@ void UFightComponent::PlayBlockAttackSkill(FAttackAnimTable* SkillToPlay)
 
 	const auto PlayMontage = AnimMontage.LoadSynchronous();
 
-	AnimInstance->PlayFightMontage(PlayMontage,1,0,FName("Start"), true);
+
+	GetAnimInstance()->PlayAnimMontage(PlayMontage);
 
 
 }
@@ -253,7 +247,7 @@ void UFightComponent::PlayDoge()
 	const auto Anim = DogeAnimMontage;
 	const auto PlayMontage = Anim.LoadSynchronous();
 
-	AnimInstance->PlayFightMontage(PlayMontage,1,0,FName("Start"), true);
+	GetAnimInstance()->PlayAnimMontage(PlayMontage);
 }
 
 
@@ -512,19 +506,28 @@ AGameFightCharacter* UFightComponent::GetAttackCharacter()
 
 void UFightComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	UE_LOG( LogTemp, Warning, TEXT("Montage Ended: %s, Interrupted: %d"), *Montage->GetName(), bInterrupted);
-	OnMontagePlayerEnd(Montage, bInterrupted);
+	UE_LOG( LogTemp, Warning, TEXT("Montage Ended: %s, Interrupted: %s"),
+		*Montage->GetName(), bInterrupted ? TEXT("true") : TEXT("false"));
+	//OnMontagePlayerEnd(Montage, bInterrupted, InstanceID);
 }
 
 void UFightComponent::OnMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted)
 {
-	UE_LOG( LogTemp, Warning, TEXT("Montage Blending Out: %s, Interrupted: %d"), *Montage->GetName(), bInterrupted);
-	OnMontagePlayerEnd(Montage, bInterrupted);
+	UE_LOG( LogTemp, Warning, TEXT("Montage Blending Out: %s, Interrupted: %s"),
+		*Montage->GetName(), bInterrupted ? TEXT("true") : TEXT("false"));
+	//OnMontagePlayerEnd(Montage, bInterrupted, InstanceID);
 }
 
-void UFightComponent::OnMontagePlayerEnd(UAnimMontage* Montage, bool bInterrupted)
+void UFightComponent::OnMontagePlayEnd(UAnimMontage* Montage, bool bInterrupted, int32 InstanceID)
 {
+UE_LOG( LogTemp, Warning, TEXT("OnMontagePlayEnd: %s, Interrupted: %s, Id: %d"),
+		*Montage->GetName(), bInterrupted ? TEXT("true") : TEXT("false"),InstanceID);
+}
 
+void UFightComponent::OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInterrupted, int32 InstanceID)
+{
+	UE_LOG( LogTemp, Warning, TEXT("OnMontagePlayBlendingOut: %s, Interrupted: %s, Id: %d"),
+			*Montage->GetName(), bInterrupted ? TEXT("true") : TEXT("false") ,InstanceID);
 }
 
 #pragma endregion

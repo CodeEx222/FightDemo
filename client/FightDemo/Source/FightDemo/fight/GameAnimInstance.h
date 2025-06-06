@@ -20,7 +20,8 @@ public:
 	AGameFightCharacter* gameCharacter;
 
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void PlayFightMontage(UAnimMontage* AnimMontage, float PlayRate = 1.0, float StartPosition = 0.0f,
-	                      const FName &NotifyName = FName("None"), bool bStopAllMontages = true);
+	UFUNCTION()
+	float PlayAnimMontage(class UAnimMontage* AnimMontage,
+		float InPlayRate = 1.0f, FName StartSectionName = NAME_None,
+		EMontagePlayReturnType ReturnValueType = EMontagePlayReturnType::MontageLength);
 };
