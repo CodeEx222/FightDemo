@@ -17,7 +17,7 @@ enum class ECharaterState : uint8
 	CharaterState_Attacking UMETA(DisplayName="攻击"),
 	CharaterState_AttackingNext UMETA(DisplayName="可以继续攻击"),
 	CharaterState_Defending UMETA(DisplayName="防御"),
-	CharaterState_Attacked UMETA(DisplayName="受击"),
+	CharaterState_BeAttack UMETA(DisplayName="受击"),
 	CharaterState_Doge UMETA(DisplayName="闪避"),
 };
 

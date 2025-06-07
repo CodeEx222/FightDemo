@@ -137,7 +137,7 @@ private:
 	int AnimPlayInstanceID;
 
 	UFUNCTION()
-	void PlayMontage(UAnimMontage* Montage, float InPlayRate = 1.0f, FName StartSectionName = NAME_None,
+	void CharacterPlayMontage(UAnimMontage* Montage, float InPlayRate = 1.0f, FName StartSectionName = NAME_None,
 		EMontagePlayReturnType ReturnValueType = EMontagePlayReturnType::MontageLength);
 
 	UFUNCTION()

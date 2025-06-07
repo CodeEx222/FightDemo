@@ -165,22 +165,13 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 	const auto Anim = SkillToPlay->ActionAnimMontage;
 	const auto PlayMontage = Anim.LoadSynchronous();
 
-
-
-	AnimPlayInstanceID++;
-	FOnMontageBlendingOutStarted BlendingOutDelegate;
-	BlendingOutDelegate.BindUObject(this, &UFightComponent::OnMontagePlayBlendingOut,AnimPlayInstanceID);
-
-	GetAnimInstance()->PlayAnimMontage(PlayMontage,1);
-	GetAnimInstance()->Montage_SetBlendingOutDelegate(BlendingOutDelegate, PlayMontage);
+	CharacterPlayMontage(PlayMontage);
 	// 设置攻击状态
-	GameCharaterState = ECharaterState::CharaterState_Attacking;;
+	GameCharaterState = ECharaterState::CharaterState_Attacking;
 }
 
 void UFightComponent::PlayBeAttackSkill(FAttackAnimTable* SkillToPlay)
 {
-	const auto AnimInstance = GetAnimInstance();
-
 	// 要播放的动画
 	const auto anim = SkillToPlay->BeAttackAnimMontage;
 	// 随机一个动画
@@ -193,9 +184,9 @@ void UFightComponent::PlayBeAttackSkill(FAttackAnimTable* SkillToPlay)
 
 	const auto PlayMontage = animMontage.LoadSynchronous();
 
-	GetAnimInstance()->PlayAnimMontage(PlayMontage);
-
-
+	CharacterPlayMontage(PlayMontage);
+	// 设置受击状态
+	GameCharaterState = ECharaterState::CharaterState_BeAttack;
 }
 
 void UFightComponent::PlayBlockAttackSkill(FAttackAnimTable* SkillToPlay)
@@ -234,7 +225,9 @@ void UFightComponent::PlayDoge()
 	const auto Anim = DogeAnimMontage;
 	const auto PlayMontage = Anim.LoadSynchronous();
 
-	GetAnimInstance()->PlayAnimMontage(PlayMontage);
+	CharacterPlayMontage(PlayMontage);
+	// 设置闪避状态
+	GameCharaterState = ECharaterState::CharaterState_Doge;
 }
 
 
@@ -278,7 +271,7 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 
 	switch (fightNotify->AnimEnum)
 	{
-		case  EFightAnimNotify::Attack:
+	case  EFightAnimNotify::Attack:
 		{
 			// 触发攻击
 			auto target = GetAttackCharacter();
@@ -299,12 +292,12 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 		{
 			// 可以播放下次攻击
 			SetPlayerActionState(EPlayerState::CanAttack);
+			GameCharaterState = ECharaterState::CharaterState_AttackingNext;
 			CheckAttack();
+
 		}
 	default: ;
 	}
-
-
 }
 
 void UFightComponent::OnAnimNotifyState(UAnimNotifyState * NotifyState, bool bStart)
@@ -491,8 +484,8 @@ AGameFightCharacter* UFightComponent::GetAttackCharacter()
 
 #pragma region 动画结束通知
 
-void UFightComponent::PlayMontage(UAnimMontage* Montage, float InPlayRate, FName StartSectionName,
-	EMontagePlayReturnType ReturnValueType)
+void UFightComponent::CharacterPlayMontage(UAnimMontage* Montage, float InPlayRate, const FName StartSectionName,
+	const EMontagePlayReturnType ReturnValueType)
 {
 	AnimPlayInstanceID++;
 	FOnMontageBlendingOutStarted BlendingOutDelegate;
@@ -504,8 +497,13 @@ void UFightComponent::PlayMontage(UAnimMontage* Montage, float InPlayRate, FName
 
 void UFightComponent::OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInterrupted, int32 InstanceID)
 {
-	UE_LOG( LogTemp, Warning, TEXT("OnMontagePlayBlendingOut: %s, Interrupted: %s, Id: %d"),
-			*Montage->GetName(), bInterrupted ? TEXT("true") : TEXT("false") ,InstanceID);
+	// UE_LOG( LogTemp, Warning, TEXT("OnMontagePlayBlendingOut: %s, Interrupted: %s, Id: %d"),
+	// 		*Montage->GetName(), bInterrupted ? TEXT("true") : TEXT("false") ,InstanceID);
+
+	if (InstanceID == AnimPlayInstanceID)
+	{
+		GameCharaterState = ECharaterState::CharaterState_None;
+	}
 }
 
 #pragma endregion
