@@ -133,14 +133,13 @@ private:
 	// 当前播放的动作表
 	FAttackAnimTable* CurrentAnimTable;
 
+	// 动画播放实例ID
 	int AnimPlayInstanceID;
 
 	UFUNCTION()
-	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
-	UFUNCTION()
-	void OnMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted);
-	UFUNCTION()
-	void OnMontagePlayEnd(UAnimMontage* Montage, bool bInterrupted, int32 InstanceID);
+	void PlayMontage(UAnimMontage* Montage, float InPlayRate = 1.0f, FName StartSectionName = NAME_None,
+		EMontagePlayReturnType ReturnValueType = EMontagePlayReturnType::MontageLength);
+
 	UFUNCTION()
 	void OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInterrupted, int32 InstanceID);
 };

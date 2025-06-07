@@ -62,11 +62,6 @@ void UFightComponent::BeginPlay()
 
 	const auto AnimInstance = GetAnimInstance();
 
-	AnimInstance->OnMontageEnded.AddDynamic( this, &UFightComponent::OnMontageEnded);
-	AnimInstance->OnMontageBlendingOut.AddDynamic( this, &UFightComponent::OnMontageBlendingOut);
-
-
-
 	// 可以攻击
 	SetPlayerActionState(EPlayerState::CanAttack);
 	// 可以记录输入
@@ -173,21 +168,13 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 
 
 	AnimPlayInstanceID++;
-	FOnMontageEnded EndDelegate;
 	FOnMontageBlendingOutStarted BlendingOutDelegate;
-	EndDelegate.BindUObject(this, &UFightComponent::OnMontagePlayEnd,AnimPlayInstanceID);
 	BlendingOutDelegate.BindUObject(this, &UFightComponent::OnMontagePlayBlendingOut,AnimPlayInstanceID);
 
-	UE_LOG(LogTemp, Warning, TEXT("Play Skill: %s, Anim: %s, ID: %d"),
-		*PlayMontage->GetName(), *Anim.GetAssetName(), AnimPlayInstanceID);
-	GetAnimInstance()->Montage_Stop(0);
 	GetAnimInstance()->PlayAnimMontage(PlayMontage,1);
-	GetAnimInstance()->Montage_SetEndDelegate(EndDelegate, PlayMontage);
 	GetAnimInstance()->Montage_SetBlendingOutDelegate(BlendingOutDelegate, PlayMontage);
 	// 设置攻击状态
-	GameCharaterState = ECharaterState::CharaterState_Attacking;
-	UE_LOG(LogTemp, Warning, TEXT("Play Skill End: %s, Anim: %s, ID: %d"),
-    		*PlayMontage->GetName(), *Anim.GetAssetName(), AnimPlayInstanceID);
+	GameCharaterState = ECharaterState::CharaterState_Attacking;;
 }
 
 void UFightComponent::PlayBeAttackSkill(FAttackAnimTable* SkillToPlay)
@@ -504,24 +491,15 @@ AGameFightCharacter* UFightComponent::GetAttackCharacter()
 
 #pragma region 动画结束通知
 
-void UFightComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+void UFightComponent::PlayMontage(UAnimMontage* Montage, float InPlayRate, FName StartSectionName,
+	EMontagePlayReturnType ReturnValueType)
 {
-	UE_LOG( LogTemp, Warning, TEXT("Montage Ended: %s, Interrupted: %s"),
-		*Montage->GetName(), bInterrupted ? TEXT("true") : TEXT("false"));
-	//OnMontagePlayerEnd(Montage, bInterrupted, InstanceID);
-}
+	AnimPlayInstanceID++;
+	FOnMontageBlendingOutStarted BlendingOutDelegate;
+	BlendingOutDelegate.BindUObject(this, &UFightComponent::OnMontagePlayBlendingOut,AnimPlayInstanceID);
 
-void UFightComponent::OnMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted)
-{
-	UE_LOG( LogTemp, Warning, TEXT("Montage Blending Out: %s, Interrupted: %s"),
-		*Montage->GetName(), bInterrupted ? TEXT("true") : TEXT("false"));
-	//OnMontagePlayerEnd(Montage, bInterrupted, InstanceID);
-}
-
-void UFightComponent::OnMontagePlayEnd(UAnimMontage* Montage, bool bInterrupted, int32 InstanceID)
-{
-UE_LOG( LogTemp, Warning, TEXT("OnMontagePlayEnd: %s, Interrupted: %s, Id: %d"),
-		*Montage->GetName(), bInterrupted ? TEXT("true") : TEXT("false"),InstanceID);
+	GetAnimInstance()->PlayAnimMontage(Montage,1,StartSectionName,ReturnValueType);
+	GetAnimInstance()->Montage_SetBlendingOutDelegate(BlendingOutDelegate, Montage);
 }
 
 void UFightComponent::OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInterrupted, int32 InstanceID)

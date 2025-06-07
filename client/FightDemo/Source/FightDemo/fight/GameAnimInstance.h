@@ -19,7 +19,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	AGameFightCharacter* gameCharacter;
 
-
 	UFUNCTION()
 	float PlayAnimMontage(class UAnimMontage* AnimMontage,
 		float InPlayRate = 1.0f, FName StartSectionName = NAME_None,
