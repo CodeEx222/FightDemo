@@ -36,6 +36,28 @@ public:
 	bool IsNewCheck;
 };
 
+USTRUCT(BlueprintType)
+struct FCharacterAbility
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	double Value;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	double MaxValue;
+
+	// 回复速度
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	double RecoverValue;
+
+	// 格挡恢复开始时间
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	double RecoverTime;
+
+};
+
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class FIGHTDEMO_API UFightComponent : public UActorComponent
@@ -52,10 +74,10 @@ public:
 	TArray<FInputElement> MoveInputArray;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "血量"))
-	int Hp = 100;
+	FCharacterAbility HPValue;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "格挡值"))
-	int BlockValue = 100;
+	FCharacterAbility BlockValue;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "人物状态"))
 	ECharaterState GameCharaterState;
@@ -63,6 +85,12 @@ public:
 	// 闪避对象
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UAnimMontage> DogeAnimMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "结束攻击动画"))
+	TSoftObjectPtr<UAnimMontage> EndAttackAnimMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "结束受击动画"))
+	TSoftObjectPtr<UAnimMontage> EndBeAttackAnimMontage;
 
 protected:
 	// Called when the game starts
@@ -108,18 +136,6 @@ private:
 
 	// 动作状态指示
 	std::shared_ptr<std::bitset<32>> PlayerActionStateBitset;
-
-
-	// 格挡数值
-	int BlockNum;
-	// 格挡回复速度
-	int BlockRecoverSpeed;
-	// 格挡恢复开始时间
-	int BlockRecoverStartTime;
-
-	// 血量数值
-	int HPNum;
-
 
 	UPROPERTY()
 	AGameFightCharacter* OwnCharacterPtr;

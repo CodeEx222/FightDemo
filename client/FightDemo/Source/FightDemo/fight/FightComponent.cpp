@@ -66,6 +66,10 @@ void UFightComponent::BeginPlay()
 	SetPlayerActionState(EPlayerState::CanAttack);
 	// 可以记录输入
 	SetPlayerActionState(EPlayerState::CanRecordInput);
+
+	HPValue.Value = HPValue.MaxValue;
+	BlockValue.Value = BlockValue.MaxValue;
+
 }
 
 
@@ -278,11 +282,22 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 			if (target != nullptr)
 			{
 				// 判断目标对象是否
-				if (auto TargetFightComponent = target->GetComponentByClass<UFightComponent>(); TargetFightComponent != nullptr)
+				if (const auto TargetFightComponent = target->GetComponentByClass<UFightComponent>(); TargetFightComponent != nullptr)
 				{
-					TargetFightComponent->PlayBeAttackSkill(CurrentAnimTable);
-					TargetFightComponent->HPNum -= CurrentAnimTable->AttackHPValue;
-					target->HpChangeView(TargetFightComponent->HPNum,100);
+					if (!TargetFightComponent->GetPlayerActionState(EPlayerState::WuDi))
+					{
+						if (TargetFightComponent->GameCharaterState == ECharaterState::CharaterState_Defending)
+						{
+							// 防御
+						}
+						else
+						{
+							// 播放攻击动作
+							TargetFightComponent->PlayBeAttackSkill(CurrentAnimTable);
+							TargetFightComponent->HPValue.Value -= CurrentAnimTable->AttackHPValue;
+							target->HpChangeView(TargetFightComponent->HPValue.Value,TargetFightComponent->HPValue.MaxValue);
+						}
+					}
 				}
 			}
 
@@ -343,6 +358,10 @@ void UFightComponent::OnAnimNotifyState(UAnimNotifyState * NotifyState, bool bSt
 	case EFightAnimStateNotify::InoputState:
 		// 输入区间
 		SetPlayerActionState(EPlayerState::CanRecordInput, true);
+		break;
+	case EFightAnimStateNotify::WuDiState:
+		// 无敌区间
+		SetPlayerActionState(EPlayerState::WuDi, bStart);
 		break;
 	}
 

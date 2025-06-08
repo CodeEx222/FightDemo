@@ -46,6 +46,7 @@ enum class EPlayerState : uint8
 	CanAttack UMETA(DisplayName="可以攻击"),
 	CanRecordInput UMETA(DisplayName="可以记录输入"),
 	BeBlockAttack UMETA(DisplayName="被格挡攻击"),
+	WuDi UMETA(DisplayName="无敌状态"),
 };
 
 // 输入标识
