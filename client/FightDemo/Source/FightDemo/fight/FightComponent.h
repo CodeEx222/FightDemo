@@ -86,6 +86,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UAnimMontage> DogeAnimMontage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "格挡受击动画"))
+	TSoftObjectPtr<UAnimMontage> BlockBeAttackAnimMontage;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "结束攻击动画"))
 	TSoftObjectPtr<UAnimMontage> EndAttackAnimMontage;
 
@@ -129,6 +132,7 @@ public:
 
 	// 闪避
 	void PlayDoge();
+	void PlayBlockBeAttack();
 
 private:
 	void CheckAttack();

@@ -234,6 +234,16 @@ void UFightComponent::PlayDoge()
 	GameCharaterState = ECharaterState::CharaterState_Doge;
 }
 
+void UFightComponent::PlayBlockBeAttack()
+{
+	// 要播放的动画
+	const auto Anim = BlockBeAttackAnimMontage;
+	const auto PlayMontage = Anim.LoadSynchronous();
+
+	CharacterPlayMontage(PlayMontage);
+	// 设置闪避状态
+	GameCharaterState = ECharaterState::CharaterState_BeAttack;
+}
 
 void UFightComponent::CheckAttack()
 {
@@ -289,6 +299,7 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 						if (TargetFightComponent->GameCharaterState == ECharaterState::CharaterState_Defending)
 						{
 							// 防御
+							PlayBlockBeAttack();
 						}
 						else
 						{
