@@ -2,7 +2,7 @@
 
 #include "AnimNotifyProcess.h"
 #include "GameplayTagsManager.h"
-#include "FightDemo/GameFightCharacter.h"
+#include "mode/GameFightCharacter.h"
 
 
 #if WITH_EDITOR

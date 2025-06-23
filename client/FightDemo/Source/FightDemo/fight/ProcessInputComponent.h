@@ -5,8 +5,27 @@
 #include "CoreMinimal.h"
 #include "InputAction.h"
 #include "Components/ActorComponent.h"
+#include "FightDemo/mode/FightInstance.h"
 #include "ProcessInputComponent.generated.h"
 
+USTRUCT(BlueprintType)
+struct FInputElement
+{
+	GENERATED_BODY()
+public:
+
+	// 保存输入的枚举
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EInputEnum InputEnum;
+
+	// 保存输入的时间
+	UPROPERTY(EditAnywhere, BlueprintReadWrite);
+	double GameTime;
+
+	// 是否是新的输入,不是老的输入,防止反复出发
+	UPROPERTY(EditAnywhere, BlueprintReadWrite);
+	bool IsNewCheck;
+};
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class FIGHTDEMO_API UProcessInputComponent : public UActorComponent

@@ -4,11 +4,15 @@
 #include "GameFightCharacter.h"
 
 #include "EnhancedInputComponent.h"
+#include "Components/WidgetComponent.h"
 #include "FightDemo/Anim/AnimDefine.h"
 #include "fight/FightComponent.h"
+#include "fight/GameAnimInstance.h"
+#include "fight/PlayerAttributeComponent.h"
 #include "fight/ProcessInputComponent.h"
 #include "mode/FightInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "ui/HeadView.h"
 
 // Sets default values
 AGameFightCharacter::AGameFightCharacter()
@@ -18,6 +22,10 @@ AGameFightCharacter::AGameFightCharacter()
 
 	FightComponent = CreateDefaultSubobject<UFightComponent>(TEXT("FightComponent"));
 	ProcessInputComponent = CreateDefaultSubobject<UProcessInputComponent>(TEXT("ProcessInputComponent"));
+	PlayerAttributeComponent = CreateDefaultSubobject<UPlayerAttributeComponent>(TEXT("PlayerAttributeComponent"));
+
+	HeadViewUI = CreateDefaultSubobject<UWidgetComponent>(TEXT("HeadViewUI"));
+	HeadViewUI->SetupAttachment(RootComponent);
 
 }
 
@@ -109,10 +117,10 @@ void AGameFightCharacter::UpdateActorRotator()
 	SetActorRotation(actorRot);
 }
 
-bool AGameFightCharacter::IsAttackPlayer(AGameFightCharacter* target)
+bool AGameFightCharacter::IsAttackPlayer(AGameFightCharacter* Target)
 {
 	auto selfPos = this->GetActorLocation();
-	auto targetPos = target->GetActorLocation();
+	auto targetPos = Target->GetActorLocation();
 
 	auto dir = targetPos - selfPos;
 
@@ -151,12 +159,15 @@ void AGameFightCharacter::DoMove(float Right, float Forward)
 		// get right vector
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-		MoveActionX = Right;
-		MoveActionY = Forward;
-
 		// add movement
 		AddMovementInput(ForwardDirection, Forward);
 		AddMovementInput(RightDirection, Right);
+
+		UAnimInstance * AnimInstance =  GetMesh() ?  GetMesh()->GetAnimInstance() : nullptr;
+		check(AnimInstance != nullptr);
+		const auto OwnAnimInstance = Cast<UGameAnimInstance>(AnimInstance);
+		check(OwnAnimInstance != nullptr);
+		OwnAnimInstance->SetMoveDirection(Right,Forward);
 	}
 }
 
@@ -170,23 +181,23 @@ void AGameFightCharacter::DoLook(float Yaw, float Pitch)
 	}
 }
 
-void AGameFightCharacter::DoAnimNotify(UFightAnimNotify* animNotify)
+void AGameFightCharacter::DoAnimNotify(UFightAnimNotify* AnimNotify)
 {
-	if (FightComponent == nullptr || animNotify == nullptr)
+	if (FightComponent == nullptr || AnimNotify == nullptr)
 	{
 		return;
 	}
-	FightComponent->OnAnimNotify(animNotify);
+	FightComponent->OnAnimNotify(AnimNotify);
 }
 
-void AGameFightCharacter::DoAnimNotifyState(UFightAnimNotifyState* animNotyfy, bool state)
+void AGameFightCharacter::DoAnimNotifyState(UFightAnimNotifyState* AnimNotyfy, bool bState)
 {
-	if (FightComponent == nullptr || animNotyfy == nullptr)
+	if (FightComponent == nullptr || AnimNotyfy == nullptr)
 	{
 		return;
 	}
 
-	FightComponent->OnAnimNotifyState(animNotyfy, state);
+	FightComponent->OnAnimNotifyState(AnimNotyfy, bState);
 }
 
 

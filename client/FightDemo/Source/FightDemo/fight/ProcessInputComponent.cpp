@@ -3,7 +3,7 @@
 
 #include "ProcessInputComponent.h"
 
-#include "FightDemo/GameFightCharacter.h"
+#include "mode/GameFightCharacter.h"
 #include "GameFramework/Character.h"
 
 

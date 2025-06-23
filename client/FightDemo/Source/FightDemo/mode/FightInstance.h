@@ -9,6 +9,20 @@
 #include "Animation/AnimNotifies/AnimNotifyState.h"
 #include "FightInstance.generated.h"
 
+// 定义8方向枚举
+UENUM(BlueprintType)
+enum class EHitDirection8 : uint8
+{
+	None       UMETA(DisplayName = "无方向"),
+	Front      UMETA(DisplayName = "前"),
+	FrontRight UMETA(DisplayName = "前右"),
+	Right      UMETA(DisplayName = "右"),
+	BackRight  UMETA(DisplayName = "后右"),
+	Back       UMETA(DisplayName = "后"),
+	BackLeft   UMETA(DisplayName = "后左"),
+	Left       UMETA(DisplayName = "左"),
+	FrontLeft  UMETA(DisplayName = "前左")
+};
 
 UENUM(BlueprintType)
 enum class ECharaterState : uint8
@@ -114,6 +128,15 @@ class FIGHTDEMO_API UFightInstance : public UGameInstance
 public:
 	virtual void Init() override;
 
+	// 获取目录下所有 AnimSequence 资源路径
+	TArray<FString> GetAllAnimSequencePaths(const FString& Directory, bool bRecursive);
+	// 异步加载目录下所有 AnimSequence 资源
+	void LoadAllAnimSequencesAsync(const FString& RootDirectory,bool bRecursive);
+
+	UPROPERTY()
+	TMap<FString, UAnimSequence*> LoadedAnims;
+
+
 	UPROPERTY(EditAnywhere)
 	bool IsUseCommon = true;
 
@@ -125,4 +148,15 @@ public:
 	TObjectPtr<UDataTable> GameFightTable;
 
 	TArray<FAttackAnimTable*> AttackAnimTableArray;
+
+	// 计算受击方向的函数
+	static EHitDirection8 CalculateHitDirection8(
+		const FVector& VictimLocation,
+		const FRotator& VictimRotation,
+		const FVector& AttackerLocation);
+
+	UFUNCTION(BlueprintCallable, Category = "Combat|Direction")
+	static EHitDirection8 CalculateHitDirection(
+		AActor* Victim,
+		AActor* Attacker);
 };

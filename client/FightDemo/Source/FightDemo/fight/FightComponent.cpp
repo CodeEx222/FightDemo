@@ -6,7 +6,8 @@
 #include "FightDemo/Anim/AnimDefine.h"
 #include "GameAnimInstance.h"
 #include "GameplayTagsManager.h"
-#include "FightDemo/GameFightCharacter.h"
+#include "ProcessInputComponent.h"
+#include "FightDemo/mode/GameFightCharacter.h"
 #include "Kismet/GameplayStatics.h"
 
 #define TAG(x) UGameplayTagsManager::Get().RequestGameplayTag(TEXT(x))
@@ -63,15 +64,12 @@ void UFightComponent::BeginPlay()
 	// ...
 	//FightTimeLineObj = new TFightTimeLine<USkillActionInfo>();
 
-	const auto AnimInstance = GetAnimInstance();
-
 	// 可以攻击
 	SetPlayerActionState(EPlayerState::CanAttack);
 	// 可以记录输入
 	SetPlayerActionState(EPlayerState::CanRecordInput);
 
-	HPValue.Value = HPValue.MaxValue;
-	BlockValue.Value = BlockValue.MaxValue;
+
 
 }
 
@@ -306,8 +304,6 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 					{
 						// 播放攻击动作
 						TargetFightComponent->PlayBeAttackSkill(CurrentAnimTable);
-						TargetFightComponent->HPValue.Value -= CurrentAnimTable->AttackHPValue;
-						target->HpChangeView(TargetFightComponent->HPValue.Value,TargetFightComponent->HPValue.MaxValue);
 					}
 				}
 			}
@@ -532,6 +528,16 @@ void UFightComponent::OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInte
 
 #pragma endregion
 
+
+void UFightComponent::PlayHit(EHitDirection8 AttackerLocation, FGameplayTag AttackTag)
+{
+
+	// /Game/common/FightAnimations/Hit/InPlace/A_Hit_Back_IP.A_Hit_Back_IP
+	// /Game/common/FightAnimations/Hit/Move/A_HiBack_M.A_HiBack_M
+
+	GetAnimInstance()->PlayAnimSequenceByPath("/Game/common/FightAnimations/Hit/Move/A_HiBack_M.A_HiBack_M",
+		"");
+}
 
 
 

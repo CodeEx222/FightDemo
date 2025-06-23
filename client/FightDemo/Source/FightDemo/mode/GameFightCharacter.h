@@ -3,12 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Anim/AnimNotifyProcess.h"
-#include "mode/FightInstance.h"
+#include "FightDemo/Anim/AnimNotifyProcess.h"
+#include "Components/WidgetComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFightCharacter.generated.h"
 
 
+class UFightAnimNotifyState;
+class UFightAnimNotify;
+class UHeadView;
+class UPlayerAttributeComponent;
 class UProcessInputComponent;
 class UFightComponent;
 enum class EAnimNotifyState : uint8;
@@ -32,14 +36,24 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	// 战斗组件
 	UPROPERTY(EditAnywhere, BlueprintReadWrite )
 	UFightComponent* FightComponent;
 
+	// 输入组件
 	UPROPERTY(EditAnywhere, BlueprintReadWrite )
 	UProcessInputComponent* ProcessInputComponent;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	// 玩家属性组件
+	UPROPERTY(EditAnywhere, BlueprintReadWrite )
+	UPlayerAttributeComponent* PlayerAttributeComponent;
+
+	// 玩家头显UI
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UI, meta = (AllowPrivateAccess = "true"))
+	UWidgetComponent* HeadViewUI;
 
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -53,11 +67,6 @@ public:
 
 	bool canFanJi;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "左右移动值"))
-	float MoveActionX;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "前后移动值"))
-	float MoveActionY;
-
 	UFUNCTION(BlueprintCallable)
 	void UpdateActorRotator();
 
@@ -65,34 +74,18 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ChangeTarget();
 
-	//UFUNCTION(BlueprintCallable)
-	//void Anim_Notify(EAnimNotifyState notifyState);
 
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void ChangeTime();
-
-
-	bool IsAttackPlayer(AGameFightCharacter* target);
+	bool IsAttackPlayer(AGameFightCharacter* Target);
 	// 处理移动输入
 	void DoMove(float Right, float Forward);
 	// 处理视角输入
 	void DoLook(float Yaw, float Pitch);
 
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void HpChangeView(float HpValue,float MaxValue);
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void BlockChangeView(float HpValue,float MaxValue);
-
+	UFUNCTION(BlueprintCallable, Category="AnimNotify")
+	virtual void DoAnimNotify(UFightAnimNotify* AnimNotify) override;
 
 	UFUNCTION(BlueprintCallable, Category="AnimNotify")
-	virtual void DoAnimNotify(UFightAnimNotify* animNotify) override;
-
-	UFUNCTION(BlueprintCallable, Category="AnimNotify")
-	virtual void DoAnimNotifyState(UFightAnimNotifyState* animNotyfy, bool state) override;
-
+	virtual void DoAnimNotifyState(UFightAnimNotifyState* AnimNotyfy, bool bState) override;
 
 };
 

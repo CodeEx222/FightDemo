@@ -4,60 +4,16 @@
 
 #include "CoreMinimal.h"
 #include <bitset>
-#include "FightInfo.h"
+#include <memory>
+
+#include "GameplayTagContainer.h"
 #include "Components/ActorComponent.h"
 #include "FightDemo/mode/FightInstance.h"
 #include "FightComponent.generated.h"
 
+struct FInputElement;
 class UGameAnimInstance;
 class AGameFightCharacter;
-enum class EInputEnum : uint8;
-
-
-
-
-
-USTRUCT(BlueprintType)
-struct FInputElement
-{
-	GENERATED_BODY()
-public:
-
-	// 保存输入的枚举
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EInputEnum InputEnum;
-
-	// 保存输入的时间
-	UPROPERTY(EditAnywhere, BlueprintReadWrite);
-	double GameTime;
-
-	// 是否是新的输入,不是老的输入,防止反复出发
-	UPROPERTY(EditAnywhere, BlueprintReadWrite);
-	bool IsNewCheck;
-};
-
-USTRUCT(BlueprintType)
-struct FCharacterAbility
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	double Value;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	double MaxValue;
-
-	// 回复速度
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	double RecoverValue;
-
-	// 格挡恢复开始时间
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	double RecoverTime;
-
-};
-
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class FIGHTDEMO_API UFightComponent : public UActorComponent
@@ -72,12 +28,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FInputElement> MoveInputArray;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "血量"))
-	FCharacterAbility HPValue;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "格挡值"))
-	FCharacterAbility BlockValue;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "人物状态"))
 	ECharaterState GameCharaterState;
@@ -162,4 +112,7 @@ private:
 
 	UFUNCTION()
 	void OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInterrupted, int32 InstanceID);
+
+	// 播放受击
+	void PlayHit(EHitDirection8 AttackerLocation, FGameplayTag AttackTag);
 };
