@@ -6,7 +6,7 @@
 #include <bitset>
 #include "FightInfo.h"
 #include "Components/ActorComponent.h"
-#include "FightDemo/game/FightInstance.h"
+#include "FightDemo/mode/FightInstance.h"
 #include "FightComponent.generated.h"
 
 class UGameAnimInstance;

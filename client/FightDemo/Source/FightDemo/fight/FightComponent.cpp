@@ -3,10 +3,13 @@
 
 #include "FightComponent.h"
 
-#include "AnimDefine.h"
+#include "FightDemo/Anim/AnimDefine.h"
 #include "GameAnimInstance.h"
+#include "GameplayTagsManager.h"
 #include "FightDemo/GameFightCharacter.h"
 #include "Kismet/GameplayStatics.h"
+
+#define TAG(x) UGameplayTagsManager::Get().RequestGameplayTag(TEXT(x))
 
 
 AGameFightCharacter* UFightComponent::GetOwnCharacter()
@@ -283,46 +286,39 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 		return;
 	}
 
-	switch (fightNotify->AnimEnum)
+	if (fightNotify->AnimTag.MatchesTag(TAG("game.animNotify.hit")))
 	{
-	case  EFightAnimNotify::Attack:
+		// 触发攻击
+		auto target = GetAttackCharacter();
+		if (target != nullptr)
 		{
-			// 触发攻击
-			auto target = GetAttackCharacter();
-			if (target != nullptr)
+			// 判断目标对象是否
+			if (const auto TargetFightComponent = target->GetComponentByClass<UFightComponent>(); TargetFightComponent != nullptr)
 			{
-				// 判断目标对象是否
-				if (const auto TargetFightComponent = target->GetComponentByClass<UFightComponent>(); TargetFightComponent != nullptr)
+				if (!TargetFightComponent->GetPlayerActionState(EPlayerState::WuDi))
 				{
-					if (!TargetFightComponent->GetPlayerActionState(EPlayerState::WuDi))
+					if (TargetFightComponent->GameCharaterState == ECharaterState::CharaterState_Defending)
 					{
-						if (TargetFightComponent->GameCharaterState == ECharaterState::CharaterState_Defending)
-						{
-							// 防御
-							PlayBlockBeAttack();
-						}
-						else
-						{
-							// 播放攻击动作
-							TargetFightComponent->PlayBeAttackSkill(CurrentAnimTable);
-							TargetFightComponent->HPValue.Value -= CurrentAnimTable->AttackHPValue;
-							target->HpChangeView(TargetFightComponent->HPValue.Value,TargetFightComponent->HPValue.MaxValue);
-						}
+						// 防御
+						PlayBlockBeAttack();
+					}
+					else
+					{
+						// 播放攻击动作
+						TargetFightComponent->PlayBeAttackSkill(CurrentAnimTable);
+						TargetFightComponent->HPValue.Value -= CurrentAnimTable->AttackHPValue;
+						target->HpChangeView(TargetFightComponent->HPValue.Value,TargetFightComponent->HPValue.MaxValue);
 					}
 				}
 			}
-
-
 		}
-	case EFightAnimNotify::AttackNext:
-		{
-			// 可以播放下次攻击
-			SetPlayerActionState(EPlayerState::CanAttack);
-			GameCharaterState = ECharaterState::CharaterState_AttackingNext;
-			CheckAttack();
-
-		}
-	default: ;
+	}
+	else if (fightNotify->AnimTag.MatchesTag(TAG("game.animNotify.nextAttack")))
+	{
+		// 可以播放下次攻击
+		SetPlayerActionState(EPlayerState::CanAttack);
+		GameCharaterState = ECharaterState::CharaterState_AttackingNext;
+		CheckAttack();
 	}
 }
 
@@ -335,47 +331,45 @@ void UFightComponent::OnAnimNotifyState(UAnimNotifyState * NotifyState, bool bSt
 		return;
 	}
 
-	switch (fightNotifyState->AnimEnum)
+	if (fightNotifyState->AnimTag.MatchesTag(TAG("game.animNotifyState.lianji")))
 	{
-	case EFightAnimStateNotify::None:
-		break;
-	case EFightAnimStateNotify::PlayState:
-			SetPlayerActionState(EPlayerState::InPlayAttack,bStart);
+		// 连击区间
+		SetPlayerActionState(EPlayerState::InPlayAttack,bStart);
 
-			if (bStart)
+		if (bStart)
+		{
+			// 新的开始, 把连击置空
+			SetPlayerActionState(EPlayerState::InComboNext, false);
+		}
+		else
+		{
+			// 连击有效区间
+			if (GetPlayerActionState(EPlayerState::InComboNext))
 			{
-				// 新的开始, 把连击置空
-				SetPlayerActionState(EPlayerState::InComboNext, false);
+				// 是连击结束的,就不需要清空输入了
 			}
 			else
 			{
-				// 连击有效区间
-				if (GetPlayerActionState(EPlayerState::InComboNext))
-				{
-					// 是连击结束的,就不需要清空输入了
-				}
-				else
-				{
-					// 其他结束,清空输入
-					InputArray.Empty();
-				}
+				// 其他结束,清空输入
+				InputArray.Empty();
 			}
-
-		break;
-	case EFightAnimStateNotify::FanJiState:
+		}
+	}
+	else if (fightNotifyState->AnimTag.MatchesTag(TAG("game.animNotifyState.fanji")))
+	{
 		// 反击区间
 		SetPlayerActionState(EPlayerState::BeBlockAttack, bStart);
-		break;
-	case EFightAnimStateNotify::InoputState:
+	}
+	else if (fightNotifyState->AnimTag.MatchesTag(TAG("game.animNotifyState.input")))
+	{
 		// 输入区间
 		SetPlayerActionState(EPlayerState::CanRecordInput, true);
-		break;
-	case EFightAnimStateNotify::WuDiState:
+	}
+	else if (fightNotifyState->AnimTag.MatchesTag(TAG("game.animNotifyState.wudi")))
+	{
 		// 无敌区间
 		SetPlayerActionState(EPlayerState::WuDi, bStart);
-		break;
 	}
-
 
 }
 

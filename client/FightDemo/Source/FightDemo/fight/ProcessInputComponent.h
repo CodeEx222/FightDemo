@@ -1,0 +1,80 @@
+//
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "InputAction.h"
+#include "Components/ActorComponent.h"
+#include "ProcessInputComponent.generated.h"
+
+
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+class FIGHTDEMO_API UProcessInputComponent : public UActorComponent
+{
+	GENERATED_BODY()
+
+public:
+	// Sets default values for this component's properties
+	UProcessInputComponent();
+
+protected:
+	// Called when the game starts
+	virtual void BeginPlay() override;
+
+public:
+	// Called every frame
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
+	                           FActorComponentTickFunction* ThisTickFunction) override;
+
+
+	UPROPERTY(EditAnywhere, Category ="Input", Meta = (DisplayName = "攻击输入"))
+	UInputAction* InputAttack;
+
+	UPROPERTY(EditAnywhere, Category ="Input", Meta = (DisplayName = "攻击输入(重击)"))
+	UInputAction* InputAttackHeavy;
+
+	UPROPERTY(EditAnywhere, Category ="Input" , Meta = (DisplayName = "防御输入"))
+	UInputAction* InputBlock;
+
+	UPROPERTY(EditAnywhere, Category ="Input" , Meta = (DisplayName = "切换目标"))
+	UInputAction* InputChangeTarget;
+
+	UPROPERTY(EditAnywhere, Category ="Input" , Meta = (DisplayName = "闪避输入"))
+	UInputAction* InputDoge;
+
+	UPROPERTY(EditAnywhere, Category ="Input", Meta = (DisplayName = "摄像头移动"))
+	UInputAction* InputLook;
+
+	UPROPERTY(EditAnywhere, Category ="Input" , Meta = (DisplayName = "移动输入"))
+	UInputAction* InputMove;
+
+	UPROPERTY(EditAnywhere, Category ="Input" , Meta = (DisplayName = "移动输入(前)"))
+	UInputAction* InputMoveF;
+
+	UPROPERTY(EditAnywhere, Category ="Input" , Meta = (DisplayName = "移动输入(后)"))
+	UInputAction* InputMoveB;
+
+	UPROPERTY(EditAnywhere, Category ="Input" , Meta = (DisplayName = "移动输入(左)"))
+	UInputAction* InputMoveL;
+
+	UPROPERTY(EditAnywhere, Category ="Input" , Meta = (DisplayName = "移动输入(右)"))
+	UInputAction* InputMoveR;
+
+	void ProcessInputAttack(const FInputActionValue& Value);
+	void ProcessInputAttackHeavy(const FInputActionValue& Value);
+	void ProcessInputDoge(const FInputActionValue& Value);
+	void ProcessInputLook(const FInputActionValue& Value);
+	void ProcessInputMove(const FInputActionValue& Value);
+	void ProcessInputMoveF(const FInputActionValue& Value);
+	void ProcessInputMoveB(const FInputActionValue& Value);
+	void ProcessInputMoveL(const FInputActionValue& Value);
+	void ProcessInputMoveR(const FInputActionValue& Value);
+
+	void ProcessInputBlockPressed(const FInputActionValue& Value);
+	void ProcessInputChangeTargetPressed(const FInputActionValue& Value);
+
+	void ProcessInputBlockReleased(const FInputActionValue& Value);
+	void ProcessInputChangeTargetReleased(const FInputActionValue& Value);
+
+
+};
