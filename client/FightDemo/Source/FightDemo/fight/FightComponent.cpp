@@ -133,7 +133,8 @@ void UFightComponent::AddInput(EInputEnum InputEnum)
 			{
 				// 假如对面是进攻状态,看是否能进入防御反击
 				bool isPlayAttack = false;
-				auto target = GetAttackCharacter();
+				bool outIsMove;
+				auto target = GetAttackCharacter(outIsMove);
 				if (target != nullptr)
 				{
 					// 判断目标对象是否
@@ -172,8 +173,22 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 {
 	CurrentAnimTable = SkillToPlay;
 	// 要播放的动画
-	const auto Anim = SkillToPlay->ActionAnimMontage;
-	const auto PlayMontage = Anim.LoadSynchronous();
+	// 需要查看目标或者前方180米是否有人, 有人的话就播放inplace动画 有人比较远播放 move动画 没人就播放inplace动画
+	bool outIsMove;
+	auto target = GetAttackCharacter(outIsMove);
+
+	UAnimMontage* PlayMontage = nullptr;
+	if (outIsMove)
+	{
+		const auto Anim = SkillToPlay->ActionAnimMontageMove;
+		PlayMontage = Anim.LoadSynchronous();
+	}
+	else
+	{
+		const auto Anim = SkillToPlay->ActionAnimMontageInPlace;
+		PlayMontage = Anim.LoadSynchronous();
+	}
+
 
 	CharacterPlayMontage(PlayMontage);
 	// 设置攻击状态
@@ -187,7 +202,7 @@ void UFightComponent::PlayBeAttackSkill(AGameFightCharacter* AttackActor ,FGamep
 	// 获取GameInstance
 
 	const auto AttackDir = UFightInstance::CalculateHitDirection(GetOwnCharacter(),AttackActor );
-	PlayHit(AttackDir,AttackTag);
+	PlayHit(AttackDir,AttackTag,true);
 	// 设置受击状态
 	GameCharaterState = ECharaterState::CharaterState_BeAttack;
 }
@@ -196,7 +211,7 @@ void UFightComponent::PlayBlockAttackSkill(AGameFightCharacter* AttackActor ,FGa
 {
 	// 要播放的动画
 	const auto AttackDir = UFightInstance::CalculateHitDirection(GetOwnCharacter(),AttackActor );
-	PlayBlock(AttackDir,AttackTag);
+	PlayBlock(AttackDir,AttackTag,true);
 
 }
 
@@ -273,8 +288,9 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 	if (fightNotify->AnimTag.MatchesTag(TAG("game.animNotify.hit")))
 	{
 		// 触发攻击
-		auto target = GetAttackCharacter();
-		if (target != nullptr)
+		bool outIsMove;
+		auto target = GetAttackCharacter(outIsMove);
+		if (target != nullptr && !outIsMove)
 		{
 			// 判断目标对象是否
 			if (const auto TargetFightComponent = target->GetComponentByClass<UFightComponent>(); TargetFightComponent != nullptr)
@@ -452,11 +468,12 @@ bool UFightComponent::GetPlayerActionState(EPlayerState Type) const
 
 #pragma endregion
 
-AGameFightCharacter* UFightComponent::GetAttackCharacter()
+AGameFightCharacter* UFightComponent::GetAttackCharacter(bool& OutIsMove)
 {
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGameFightCharacter::StaticClass(), FoundActors);
 
+	OutIsMove = false;
 	for (auto Actor : FoundActors)
 	{
 		// 假如角色
@@ -471,14 +488,27 @@ AGameFightCharacter* UFightComponent::GetAttackCharacter()
 			continue;
 		}
 
-		// 判断位置在1米以内, 并且方向在正前方30度
-		if (FVector::Distance(GetOwner()->GetActorLocation(), Target->GetActorLocation()) < 150)
+		// 判断位置在1.8米以内, 并且方向在正前方30度
+		if (FVector::Distance(GetOwner()->GetActorLocation(), Target->GetActorLocation()) < 180)
 		{
 			const auto ForwardVector = GetOwner()->GetActorForwardVector();
 			const auto TargetVector = Target->GetActorLocation() - GetOwner()->GetActorLocation();
 			const auto Angle = FMath::Acos(FVector::DotProduct(ForwardVector, TargetVector.GetSafeNormal()));
 			if (FMath::RadiansToDegrees(Angle) < 30)
 			{
+				OutIsMove = false;
+				return Target;
+			}
+		}
+
+		if (FVector::Distance(GetOwner()->GetActorLocation(), Target->GetActorLocation()) < 300)
+		{
+			const auto ForwardVector = GetOwner()->GetActorForwardVector();
+			const auto TargetVector = Target->GetActorLocation() - GetOwner()->GetActorLocation();
+			const auto Angle = FMath::Acos(FVector::DotProduct(ForwardVector, TargetVector.GetSafeNormal()));
+			if (FMath::RadiansToDegrees(Angle) < 30)
+			{
+				OutIsMove = true;
 				return Target;
 			}
 		}
@@ -515,24 +545,84 @@ void UFightComponent::OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInte
 #pragma endregion
 
 
-void UFightComponent::PlayHit(EHitDirection8 AttackerLocation, FGameplayTag AttackTag)
+void UFightComponent::PlayHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag, bool bIsMove)
 {
+	FString AnimPath= "/Game/common/FightAnimations/Hit/";
+	if (bIsMove)
+	{
+		AnimPath += "Move/";
+	}
+	else
+	{
+		AnimPath += "InPlace/";
+	}
+
+	FString SkillName = "";
+	if (AttackTag.MatchesTag(TAG("game.animNotify.hit.up")))
+	{
+		SkillName = "A_HitHead_";
+	}
+	else if (AttackTag.MatchesTag(TAG("game.animNotify.hit.down")))
+	{
+		SkillName = "A_HitLeg_";
+	}
+
+	switch (AttackerDir)
+	{
+	case EHitDirection8::None:
+	case EHitDirection8::Front:
+		SkillName += "F_";
+		break;
+	case EHitDirection8::FrontRight:
+		SkillName += "F_";
+		break;
+	case EHitDirection8::Right:
+		SkillName += bIsMove ? "Side_R_": "R_";
+		break;
+	case EHitDirection8::BackRight:
+		SkillName = "A_Hit_Back_";
+		break;
+	case EHitDirection8::Back:
+		SkillName = "A_Hit_Back_";
+		break;
+	case EHitDirection8::BackLeft:
+		SkillName = "A_Hit_Back_";
+		break;
+	case EHitDirection8::Left:
+		SkillName += bIsMove ? "Side_L_" : "L_";
+		break;
+	case EHitDirection8::FrontLeft:
+		SkillName += "F_";
+		break;
+	}
+
+	if (bIsMove)
+	{
+		SkillName += "M";
+	}
+	else
+	{
+		SkillName += "IP";
+	}
+
+	auto finallyPath = AnimPath + SkillName + "." + SkillName;
 
 	// /Game/common/FightAnimations/Hit/InPlace/A_Hit_Back_IP.A_Hit_Back_IP
 	// /Game/common/FightAnimations/Hit/Move/A_HiBack_M.A_HiBack_M
+	// 打印到屏幕上
+	UE_LOG(LogTemp, Warning, TEXT("PlayHit AnimPath: %s"), *finallyPath);
 
-	GetAnimInstance()->PlayAnimSequenceByPath("/Game/common/FightAnimations/Hit/Move/A_HiBack_M.A_HiBack_M",
-		"");
+	GetAnimInstance()->PlayAnimSequenceByPath(finallyPath,"SkillSlot");
 }
 
-void UFightComponent::PlayBlock(EHitDirection8 AttackerLocation, FGameplayTag AttackTag)
+void UFightComponent::PlayBlock(EHitDirection8 AttackerDir, FGameplayTag AttackTag, bool bIsMove)
 {
 
 	// /Game/common/FightAnimations/Hit/InPlace/A_Hit_Back_IP.A_Hit_Back_IP
 	// /Game/common/FightAnimations/Hit/Move/A_HiBack_M.A_HiBack_M
 
 	GetAnimInstance()->PlayAnimSequenceByPath("/Game/common/FightAnimations/Hit/Move/A_HiBack_M.A_HiBack_M",
-		"");
+		"SkillSlot");
 }
 
 

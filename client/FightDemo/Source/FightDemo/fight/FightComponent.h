@@ -77,7 +77,7 @@ public:
 	bool GetPlayerActionState(EPlayerState Type) const;
 
 	// 攻击玩家
-	AGameFightCharacter* GetAttackCharacter();
+	AGameFightCharacter* GetAttackCharacter(bool& OutIsMove);
 
 
 	// 闪避
@@ -114,6 +114,6 @@ private:
 	void OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInterrupted, int32 InstanceID);
 
 	// 播放受击
-	void PlayHit(EHitDirection8 AttackerLocation, FGameplayTag AttackTag);
-	void PlayBlock(EHitDirection8 AttackerLocation, FGameplayTag AttackTag);
+	void PlayHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag, bool bIsMove);
+	void PlayBlock(EHitDirection8 AttackerDir, FGameplayTag AttackTag, bool bIsMove);
 };

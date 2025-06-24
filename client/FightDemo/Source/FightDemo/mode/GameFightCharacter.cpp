@@ -41,12 +41,6 @@ void AGameFightCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// 假如玩家处于移动状态
-	if ( GetVelocity().Size() > 0.1f)
-	{
-		// 更新Actor的旋转
-		UpdateActorRotator();
-	}
 
 }
 
@@ -168,6 +162,8 @@ void AGameFightCharacter::DoMove(float Right, float Forward)
 		const auto OwnAnimInstance = Cast<UGameAnimInstance>(AnimInstance);
 		check(OwnAnimInstance != nullptr);
 		OwnAnimInstance->SetMoveDirection(Right,Forward);
+
+		UpdateActorRotator();
 	}
 }
 

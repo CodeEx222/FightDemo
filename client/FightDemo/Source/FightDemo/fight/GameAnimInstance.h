@@ -19,6 +19,7 @@ class FIGHTDEMO_API UGameAnimInstance : public UAnimInstance
 public:
 
 
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	AGameFightCharacter* gameCharacter = nullptr;
 
@@ -29,6 +30,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EHitDirection8 MoveDirection = EHitDirection8::None;
+
 
 	UFUNCTION(BlueprintCallable)
 	void SetMoveDirection(float MoveX,float MoveY);

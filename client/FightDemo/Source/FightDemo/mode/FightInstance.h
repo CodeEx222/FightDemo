@@ -98,7 +98,11 @@ struct FAttackAnimTable : public  FTableRowBase
 
 	// 动作对象
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSoftObjectPtr<UAnimMontage> ActionAnimMontage = nullptr;
+	TSoftObjectPtr<UAnimMontage> ActionAnimMontageInPlace = nullptr;
+
+	// 动作对象
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSoftObjectPtr<UAnimMontage> ActionAnimMontageMove = nullptr;
 
 	// 消除格挡值
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

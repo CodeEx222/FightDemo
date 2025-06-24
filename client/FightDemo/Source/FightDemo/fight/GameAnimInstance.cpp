@@ -2,7 +2,11 @@
 
 
 #include "GameAnimInstance.h"
+
+#include "GameFramework/PawnMovementComponent.h"
 #include "mode/GameFightCharacter.h"
+
+
 
 void UGameAnimInstance::SetMoveDirection(float MoveX,float MoveY)
 {
