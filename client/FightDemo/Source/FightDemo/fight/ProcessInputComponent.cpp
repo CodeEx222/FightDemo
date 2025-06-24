@@ -3,6 +3,7 @@
 
 #include "ProcessInputComponent.h"
 
+#include "FightComponent.h"
 #include "mode/GameFightCharacter.h"
 #include "GameFramework/Character.h"
 
@@ -39,15 +40,30 @@ void UProcessInputComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 void UProcessInputComponent::ProcessInputAttack(const FInputActionValue& Value)
 {
-
+	const auto FightCharacter = Cast<AGameFightCharacter>(GetOwner());
+	check(FightCharacter);
+	const auto FightComponent = FightCharacter->FightComponent;
+	check(FightComponent);
+	FightComponent->AddInput(EInputEnum::NormalAttack);
 }
 
 void UProcessInputComponent::ProcessInputAttackHeavy(const FInputActionValue& Value)
 {
+	const auto FightCharacter = Cast<AGameFightCharacter>(GetOwner());
+	check(FightCharacter);
+	const auto FightComponent = FightCharacter->FightComponent;
+	check(FightComponent);
+	FightComponent->AddInput(EInputEnum::HeavyAttack);
+
 }
 
 void UProcessInputComponent::ProcessInputDoge(const FInputActionValue& Value)
 {
+	const auto FightCharacter = Cast<AGameFightCharacter>(GetOwner());
+	check(FightCharacter);
+	const auto FightComponent = FightCharacter->FightComponent;
+	check(FightComponent);
+	FightComponent->AddInput(EInputEnum::Doge);
 }
 
 void UProcessInputComponent::ProcessInputLook(const FInputActionValue& Value)
@@ -83,18 +99,38 @@ void UProcessInputComponent::ProcessInputMove(const FInputActionValue& Value)
 
 void UProcessInputComponent::ProcessInputMoveF(const FInputActionValue& Value)
 {
+	const auto FightCharacter = Cast<AGameFightCharacter>(GetOwner());
+	check(FightCharacter);
+	const auto FightComponent = FightCharacter->FightComponent;
+	check(FightComponent);
+	FightComponent->AddInput(EInputEnum::MoveForward);
 }
 
 void UProcessInputComponent::ProcessInputMoveB(const FInputActionValue& Value)
 {
+	const auto FightCharacter = Cast<AGameFightCharacter>(GetOwner());
+	check(FightCharacter);
+	const auto FightComponent = FightCharacter->FightComponent;
+	check(FightComponent);
+	FightComponent->AddInput(EInputEnum::MoveBackward);
 }
 
 void UProcessInputComponent::ProcessInputMoveL(const FInputActionValue& Value)
 {
+	const auto FightCharacter = Cast<AGameFightCharacter>(GetOwner());
+	check(FightCharacter);
+	const auto FightComponent = FightCharacter->FightComponent;
+	check(FightComponent);
+	FightComponent->AddInput(EInputEnum::MoveLeft);
 }
 
 void UProcessInputComponent::ProcessInputMoveR(const FInputActionValue& Value)
 {
+	const auto FightCharacter = Cast<AGameFightCharacter>(GetOwner());
+	check(FightCharacter);
+	const auto FightComponent = FightCharacter->FightComponent;
+	check(FightComponent);
+	FightComponent->AddInput(EInputEnum::MoveRight);
 }
 
 void UProcessInputComponent::ProcessInputBlockPressed(const FInputActionValue& Value)

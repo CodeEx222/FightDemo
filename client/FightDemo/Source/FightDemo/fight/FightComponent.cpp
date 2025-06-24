@@ -90,76 +90,81 @@ void UFightComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	}
 }
 
-void UFightComponent::AddInput(EInputEnum inputEnum)
+void UFightComponent::AddInput(EInputEnum InputEnum)
 {
 	const double GameTime = UGameplayStatics::GetTimeSeconds(this);
 
-	switch (inputEnum)
+	switch (InputEnum)
 	{
 	case EInputEnum::None:
-		break;
+		return; // 无效输入
 	case EInputEnum::MoveForward:
-	case EInputEnum::MoveBackward:
-	case EInputEnum::MoveLeft:
-	case EInputEnum::MoveRight:
-		// 移动输入只做记录
-		MoveInputArray.Add( {inputEnum, GameTime, true} );
+		case EInputEnum::MoveBackward:
+		case EInputEnum::MoveLeft:
+		case EInputEnum::MoveRight:
+		{
+			// 移动输入只做记录
+			MoveInputArray.Add( {InputEnum, GameTime, true} );
+
 		break;
+		}
 	case EInputEnum::NormalAttack:
 	case EInputEnum::HeavyAttack:
-		// 判断当前人物状态是否可以接受指令
-		if ( GetPlayerActionState(EPlayerState::CanRecordInput))
-		{
-			AddNewInput( {inputEnum, GameTime, true} );
-			// 假设当前人物没有在攻击状态的话,就可以检测出招
-			if ( GetPlayerActionState(EPlayerState::CanAttack))
+	{
+			// 判断当前人物状态是否可以接受指令
+			if ( GetPlayerActionState(EPlayerState::CanRecordInput))
 			{
-				CheckAttack();
-			}
+				AddNewInput( {InputEnum, GameTime, true} );
+				// 假设当前人物没有在攻击状态的话,就可以检测出招
+				if ( GetPlayerActionState(EPlayerState::CanAttack))
+				{
+					CheckAttack();
+				}
 
-		}
+			}
 
 		break;
+	}
 	case EInputEnum::Defend:
-		// 防御输入 打印日志
-		//UE_LOG(LogTemp, Warning, TEXT("Defend Input Received"));
-		if (GameCharaterState == ECharaterState::CharaterState_None)
 		{
-			// 假如对面是进攻状态,看是否能进入防御反击
-			bool isPlayAttack = false;
-			auto target = GetAttackCharacter();
-			if (target != nullptr)
+			// 防御输入 打印日志
+			//UE_LOG(LogTemp, Warning, TEXT("Defend Input Received"));
+			if (GameCharaterState == ECharaterState::CharaterState_None)
 			{
-				// 判断目标对象是否
-				if (auto fightComponent = target->GetComponentByClass<UFightComponent>(); fightComponent != nullptr)
+				// 假如对面是进攻状态,看是否能进入防御反击
+				bool isPlayAttack = false;
+				auto target = GetAttackCharacter();
+				if (target != nullptr)
 				{
-					if (fightComponent->GetPlayerActionState(EPlayerState::BeBlockAttack))
+					// 判断目标对象是否
+					if (auto fightComponent = target->GetComponentByClass<UFightComponent>(); fightComponent != nullptr)
 					{
-						isPlayAttack = true;
-						// 播放反击动
-						fightComponent->PlayBeAttackSkill(CurrentAnimTable);
-						PlayBlockAttackSkill(fightComponent->CurrentAnimTable);
+						if (fightComponent->GetPlayerActionState(EPlayerState::BeBlockAttack))
+						{
+							isPlayAttack = true;
+							// 播放反击动
+
+						}
 					}
 				}
-			}
 
-			if (!isPlayAttack)
-			{
-				// 格挡
-			}
+				if (!isPlayAttack)
+				{
+					// 格挡
+				}
 
+			}
 		}
 		break;
 	case EInputEnum::Doge:
 		{
 			PlayDoge();
 		}
-
 		break;
+
+
+	default: ;
 	}
-
-
-
 }
 
 
@@ -175,42 +180,23 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 	GameCharaterState = ECharaterState::CharaterState_Attacking;
 }
 
-void UFightComponent::PlayBeAttackSkill(FAttackAnimTable* SkillToPlay)
+void UFightComponent::PlayBeAttackSkill(AGameFightCharacter* AttackActor ,FGameplayTag AttackTag)
 {
 	// 要播放的动画
-	const auto anim = SkillToPlay->BeAttackAnimMontage;
-	// 随机一个动画
-	if (anim.Num() == 0)
-	{
-		return;
-	}
-	const int32 RandomIndex = FMath::RandRange(0, anim.Num() - 1);
-	const auto animMontage = anim[RandomIndex];
 
-	const auto PlayMontage = animMontage.LoadSynchronous();
+	// 获取GameInstance
 
-	CharacterPlayMontage(PlayMontage);
+	const auto AttackDir = UFightInstance::CalculateHitDirection(GetOwnCharacter(),AttackActor );
+	PlayHit(AttackDir,AttackTag);
 	// 设置受击状态
 	GameCharaterState = ECharaterState::CharaterState_BeAttack;
 }
 
-void UFightComponent::PlayBlockAttackSkill(FAttackAnimTable* SkillToPlay)
+void UFightComponent::PlayBlockAttackSkill(AGameFightCharacter* AttackActor ,FGameplayTag AttackTag)
 {
 	// 要播放的动画
-	const auto AnimArray = SkillToPlay->BlockAttackAnimMontage;
-	// 随机一个动画
-	if (AnimArray.Num() == 0)
-	{
-		return;
-	}
-	const int32 RandomIndex = FMath::RandRange(0, AnimArray.Num() - 1);
-	const auto AnimMontage = AnimArray[RandomIndex];
-
-	const auto PlayMontage = AnimMontage.LoadSynchronous();
-
-
-	GetAnimInstance()->PlayAnimMontage(PlayMontage);
-
+	const auto AttackDir = UFightInstance::CalculateHitDirection(GetOwnCharacter(),AttackActor );
+	PlayBlock(AttackDir,AttackTag);
 
 }
 
@@ -303,7 +289,7 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 					else
 					{
 						// 播放攻击动作
-						TargetFightComponent->PlayBeAttackSkill(CurrentAnimTable);
+						TargetFightComponent->PlayBeAttackSkill(GetOwnCharacter(),fightNotify->AnimTag);
 					}
 				}
 			}
@@ -530,6 +516,16 @@ void UFightComponent::OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInte
 
 
 void UFightComponent::PlayHit(EHitDirection8 AttackerLocation, FGameplayTag AttackTag)
+{
+
+	// /Game/common/FightAnimations/Hit/InPlace/A_Hit_Back_IP.A_Hit_Back_IP
+	// /Game/common/FightAnimations/Hit/Move/A_HiBack_M.A_HiBack_M
+
+	GetAnimInstance()->PlayAnimSequenceByPath("/Game/common/FightAnimations/Hit/Move/A_HiBack_M.A_HiBack_M",
+		"");
+}
+
+void UFightComponent::PlayBlock(EHitDirection8 AttackerLocation, FGameplayTag AttackTag)
 {
 
 	// /Game/common/FightAnimations/Hit/InPlace/A_Hit_Back_IP.A_Hit_Back_IP

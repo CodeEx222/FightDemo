@@ -30,7 +30,7 @@ void UFightInstance::Init()
 	LoadedAnims.Empty();
 	// 预加载所有角色动画
 	LoadAllAnimSequencesAsync(
-		"/Game/common/FightAnimations", true);
+		"/Game/common/FightAnimations/Hit", true);
 }
 
 TArray<FString> UFightInstance::GetAllAnimSequencePaths(const FString& Directory, bool bRecursive)

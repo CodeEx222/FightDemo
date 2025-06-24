@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "InputAction.h"
 #include "Components/ActorComponent.h"
 #include "FightDemo/mode/FightInstance.h"
@@ -16,15 +17,15 @@ public:
 
 	// 保存输入的枚举
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EInputEnum InputEnum;
+	EInputEnum InputEnum = EInputEnum::None;
 
 	// 保存输入的时间
 	UPROPERTY(EditAnywhere, BlueprintReadWrite);
-	double GameTime;
+	double GameTime = 0.0;
 
 	// 是否是新的输入,不是老的输入,防止反复出发
 	UPROPERTY(EditAnywhere, BlueprintReadWrite);
-	bool IsNewCheck;
+	bool IsNewCheck = true;
 };
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))

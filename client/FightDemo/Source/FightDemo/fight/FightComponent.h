@@ -58,12 +58,12 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 	UFUNCTION(BlueprintCallable)
-	void AddInput(EInputEnum inputEnum);
+	void AddInput(EInputEnum InputEnum);
 
 
 	void PlaySkill(FAttackAnimTable* SkillToPlay);
-	void PlayBeAttackSkill(FAttackAnimTable* SkillToPlay);
-	void PlayBlockAttackSkill(FAttackAnimTable* SkillToPlay);
+	void PlayBeAttackSkill(AGameFightCharacter* AttackActor ,FGameplayTag AttackTag);
+	void PlayBlockAttackSkill(AGameFightCharacter* AttackActor ,FGameplayTag AttackTag);
 
 	virtual void OnAnimNotify(UAnimNotify * Notify);
 	virtual void OnAnimNotifyState(UAnimNotifyState * NotifyState, bool bStart);
@@ -115,4 +115,5 @@ private:
 
 	// 播放受击
 	void PlayHit(EHitDirection8 AttackerLocation, FGameplayTag AttackTag);
+	void PlayBlock(EHitDirection8 AttackerLocation, FGameplayTag AttackTag);
 };

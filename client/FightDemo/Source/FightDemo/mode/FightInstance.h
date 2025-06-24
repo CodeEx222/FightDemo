@@ -3,10 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Engine/GameInstance.h"
 #include "Blueprint/BlueprintSupport.h"
 #include "UObject/UnrealNames.h"
-#include "Animation/AnimNotifies/AnimNotifyState.h"
+
 #include "FightInstance.generated.h"
 
 // 定义8方向枚举
@@ -67,15 +68,15 @@ enum class EPlayerState : uint8
 UENUM(BlueprintType)
 enum class EInputEnum : uint8
 {
-	None = 0  UMETA(DisplayName="无")  ,
-	MoveForward  UMETA(DisplayName="前进")  ,
-	MoveBackward  UMETA(DisplayName="后退")  ,
-	MoveLeft  UMETA(DisplayName="左移")  ,
-	MoveRight  UMETA(DisplayName="右移")  ,
-	NormalAttack  UMETA(DisplayName="轻击")  ,
-	HeavyAttack  UMETA(DisplayName="重击")  ,
-	Defend  UMETA(DisplayName="防御")  ,
-	Doge  UMETA(DisplayName="闪避")  ,
+    None = 0  UMETA(DisplayName="无")  ,
+    MoveForward  UMETA(DisplayName="前进")  ,
+    MoveBackward  UMETA(DisplayName="后退")  ,
+    MoveLeft  UMETA(DisplayName="左移")  ,
+    MoveRight  UMETA(DisplayName="右移")  ,
+    NormalAttack  UMETA(DisplayName="轻击")  ,
+    HeavyAttack  UMETA(DisplayName="重击")  ,
+    Defend  UMETA(DisplayName="防御")  ,
+    Doge  UMETA(DisplayName="闪避")  ,
 };
 
 USTRUCT(BlueprintType)
@@ -85,27 +86,19 @@ struct FAttackAnimTable : public  FTableRowBase
 
 	// ID
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int ID;
+	int ID = 0;
 
 	// 输入合集
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<EInputEnum> MoveInputs;
+	TArray<EInputEnum> MoveInputs = {};
 
 	// 输入合集
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<EInputEnum> Inputs;
+	TArray<EInputEnum> Inputs = {};
 
 	// 动作对象
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSoftObjectPtr<UAnimMontage> ActionAnimMontage;
-
-	// 受击对象
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<TSoftObjectPtr<UAnimMontage>> BeAttackAnimMontage;
-
-	// 格挡对象
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<TSoftObjectPtr<UAnimMontage>> BlockAttackAnimMontage;
+	TSoftObjectPtr<UAnimMontage> ActionAnimMontage = nullptr;
 
 	// 消除格挡值
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
