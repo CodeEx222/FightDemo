@@ -489,7 +489,7 @@ AGameFightCharacter* UFightComponent::GetAttackCharacter(bool& OutIsMove)
 		}
 
 		// 判断位置在1.8米以内, 并且方向在正前方30度
-		if (FVector::Distance(GetOwner()->GetActorLocation(), Target->GetActorLocation()) < 180)
+		if (FVector::Distance(GetOwner()->GetActorLocation(), Target->GetActorLocation()) < 160)
 		{
 			const auto ForwardVector = GetOwner()->GetActorForwardVector();
 			const auto TargetVector = Target->GetActorLocation() - GetOwner()->GetActorLocation();

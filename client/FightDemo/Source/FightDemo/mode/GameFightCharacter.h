@@ -77,8 +77,10 @@ public:
 
 	bool IsAttackPlayer(AGameFightCharacter* Target);
 	// 处理移动输入
+	UFUNCTION(BlueprintCallable)
 	void DoMove(float Right, float Forward);
 	// 处理视角输入
+	UFUNCTION(BlueprintCallable)
 	void DoLook(float Yaw, float Pitch);
 
 	UFUNCTION(BlueprintCallable, Category="AnimNotify")

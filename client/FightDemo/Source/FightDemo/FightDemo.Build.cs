@@ -17,7 +17,7 @@ public class FightDemo : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[]		{
 			"GameplayAbilities",
 			"GameplayTasks",
-			"GameplayTags", "EnhancedInput",
+			"GameplayTags", "EnhancedInput", "StateTreeModule",
 		});
 
 		PublicIncludePaths.AddRange(new string[]
