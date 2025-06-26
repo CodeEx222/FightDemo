@@ -157,20 +157,20 @@ void AGameFightCharacter::ClearTarget()
 
 bool AGameFightCharacter::IsAttackPlayer(AGameFightCharacter* Target)
 {
-	auto selfPos = this->GetActorLocation();
-	auto targetPos = Target->GetActorLocation();
+	const auto SelfPos = this->GetActorLocation();
+	const auto TargetPos = Target->GetActorLocation();
 
-	auto dir = targetPos - selfPos;
+	auto Dir = TargetPos - SelfPos;
 
 
 	// 计算距离
-	auto len = dir.Length();
+	const auto len = Dir.Length();
 	if (len < 200)
 	{
-		dir.Normalize();
+		Dir.Normalize();
 		auto selfVertor = this->GetActorForwardVector();
 
-		float angle = acos(FVector::DotProduct(selfVertor, dir)/ (selfVertor.Size()*selfVertor.Size()) ) * 180 / PI;
+		float angle = acos(FVector::DotProduct(selfVertor, Dir)/ (selfVertor.Size()*selfVertor.Size()) ) * 180 / PI;
 
 		if (angle <= 40)
 		{

@@ -114,6 +114,6 @@ private:
 	void OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInterrupted, int32 InstanceID);
 
 	// 播放受击
-	void PlayHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag, bool bIsMove);
+	void PlayHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag);
 	void PlayBlock(EHitDirection8 AttackerDir, FGameplayTag AttackTag, bool bIsMove);
 };

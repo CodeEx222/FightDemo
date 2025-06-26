@@ -202,7 +202,7 @@ void UFightComponent::PlayBeAttackSkill(AGameFightCharacter* AttackActor ,FGamep
 	// 获取GameInstance
 
 	const auto AttackDir = UFightInstance::CalculateHitDirection(GetOwnCharacter(),AttackActor );
-	PlayHit(AttackDir,AttackTag,true);
+	PlayHit(AttackDir,AttackTag);
 	// 设置受击状态
 	GameCharaterState = ECharaterState::CharaterState_BeAttack;
 }
@@ -545,17 +545,10 @@ void UFightComponent::OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInte
 #pragma endregion
 
 
-void UFightComponent::PlayHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag, bool bIsMove)
+void UFightComponent::PlayHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag)
 {
 	FString AnimPath= "/Game/common/FightAnimations/Hit/";
-	if (bIsMove)
-	{
-		AnimPath += "Move/";
-	}
-	else
-	{
-		AnimPath += "InPlace/";
-	}
+
 
 	FString SkillName = "";
 	if (AttackTag.MatchesTag(TAG("game.animNotify.hit.up")))
@@ -566,6 +559,19 @@ void UFightComponent::PlayHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag
 	{
 		SkillName = "A_HitLeg_";
 	}
+
+	auto bIsMove = AttackTag.MatchesTag(TAG("game.animNotify.hit.up.heavy")) ||
+		AttackTag.MatchesTag(TAG("game.animNotify.hit.down.heavy"));
+
+	if (bIsMove)
+	{
+		AnimPath += "Move/";
+	}
+	else
+	{
+		AnimPath += "InPlace/";
+	}
+
 
 	switch (AttackerDir)
 	{
