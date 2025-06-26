@@ -10,6 +10,8 @@
 #include "fight/GameAnimInstance.h"
 #include "fight/PlayerAttributeComponent.h"
 #include "fight/ProcessInputComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PawnMovementComponent.h"
 #include "mode/FightInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "ui/HeadView.h"
@@ -40,8 +42,6 @@ void AGameFightCharacter::BeginPlay()
 void AGameFightCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-
 }
 
 // Called to bind functionality to input
@@ -84,20 +84,37 @@ void AGameFightCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 
 		EnhancedInputComponent->BindAction(ProcessInputComponent->InputChangeTarget, ETriggerEvent::Started,
 			ProcessInputComponent, &UProcessInputComponent::ProcessInputChangeTargetPressed);
-		EnhancedInputComponent->BindAction(ProcessInputComponent->InputChangeTarget, ETriggerEvent::Completed,
-			ProcessInputComponent, &UProcessInputComponent::ProcessInputChangeTargetReleased);
+		EnhancedInputComponent->BindAction(ProcessInputComponent->InputChangeTarget, ETriggerEvent::Ongoing,
+			ProcessInputComponent, &UProcessInputComponent::ProcessInputChangeTargetLongPressed);
 	}
 
 }
 
 void AGameFightCharacter::UpdateActorRotator()
 {
-	// 处于移动中 actor朝向向摄影机朝向旋转
-	auto camera = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
-	auto cameraRot = camera->GetCameraRotation();
-	// 获取 cameraRot xy平面上的旋转值
-	cameraRot.Pitch = 0;
-	cameraRot.Roll = 0;
+	FRotator TargetRot;
+	if (PlayerFightTarget == nullptr)
+	{
+		// 处于移动中 actor朝向向摄影机朝向旋转
+		auto camera = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
+		TargetRot = camera->GetCameraRotation();
+		// 获取 cameraRot xy平面上的旋转值
+
+	}
+	else
+	{
+		auto targetPos = PlayerFightTarget->GetActorLocation();
+		auto selfPos = this->GetActorLocation();
+		auto dir = targetPos - selfPos;
+		// 计算方向向量
+		dir.Normalize();
+		TargetRot = dir.Rotation();
+	}
+
+	TargetRot.Pitch = 0;
+	TargetRot.Roll = 0;
+
+
 
 	auto actorRot = GetActorRotation();
 	auto setActorRot = actorRot;
@@ -106,9 +123,36 @@ void AGameFightCharacter::UpdateActorRotator()
 
 
 	auto gameDelta = GetWorld()->GetDeltaSeconds();
-	auto rot = FMath::RInterpTo(setActorRot, cameraRot, gameDelta  , 5);
+	auto rot = FMath::RInterpTo(setActorRot, TargetRot, gameDelta  , 15);
 	actorRot.Yaw = rot.Yaw;
 	SetActorRotation(actorRot);
+}
+
+void AGameFightCharacter::ChangeTarget()
+{
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGameFightCharacter::StaticClass(), FoundActors);
+
+	for (auto Actor : FoundActors)
+	{
+		if (Actor == this)
+		{
+			continue;
+		}
+		PlayerFightTarget = Cast<AGameFightCharacter>(Actor);
+		if (PlayerFightTarget != nullptr)
+		{
+			GetCharacterMovement()->MaxWalkSpeed = 130.0f; // 恢复默认移动速度
+			break;
+		}
+
+	}
+}
+
+void AGameFightCharacter::ClearTarget()
+{
+	PlayerFightTarget = nullptr;
+	GetCharacterMovement()->MaxWalkSpeed = 300.0f; // 恢复默认移动速度
 }
 
 bool AGameFightCharacter::IsAttackPlayer(AGameFightCharacter* Target)

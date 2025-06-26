@@ -94,7 +94,8 @@ public:
 	void ProcessInputChangeTargetPressed(const FInputActionValue& Value);
 
 	void ProcessInputBlockReleased(const FInputActionValue& Value);
-	void ProcessInputChangeTargetReleased(const FInputActionValue& Value);
+	void ProcessInputChangeTargetLongPressed(const FInputActionValue& Value);
 
+	double StartPressTime = 0.0f;
 
 };

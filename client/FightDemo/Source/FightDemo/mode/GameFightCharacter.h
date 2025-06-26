@@ -71,8 +71,11 @@ public:
 	void UpdateActorRotator();
 
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintCallable)
 	void ChangeTarget();
+
+	UFUNCTION(BlueprintCallable)
+	void ClearTarget();
 
 
 	bool IsAttackPlayer(AGameFightCharacter* Target);

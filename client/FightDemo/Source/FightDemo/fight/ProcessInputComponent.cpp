@@ -6,6 +6,7 @@
 #include "FightComponent.h"
 #include "mode/GameFightCharacter.h"
 #include "GameFramework/Character.h"
+#include "Kismet/GameplayStatics.h"
 
 
 // Sets default values for this component's properties
@@ -135,17 +136,32 @@ void UProcessInputComponent::ProcessInputMoveR(const FInputActionValue& Value)
 
 void UProcessInputComponent::ProcessInputBlockPressed(const FInputActionValue& Value)
 {
-}
 
-void UProcessInputComponent::ProcessInputChangeTargetPressed(const FInputActionValue& Value)
-{
 }
 
 void UProcessInputComponent::ProcessInputBlockReleased(const FInputActionValue& Value)
 {
 }
 
-void UProcessInputComponent::ProcessInputChangeTargetReleased(const FInputActionValue& Value)
+void UProcessInputComponent::ProcessInputChangeTargetPressed(const FInputActionValue& Value)
 {
+	const auto FightCharacter = Cast<AGameFightCharacter>(GetOwner());
+	check(FightCharacter);
+	StartPressTime = UGameplayStatics::GetTimeSeconds(GetWorld());
+	FightCharacter->ChangeTarget();
+	UE_LOG(LogTemp, Warning, TEXT("Player changed target"));
+}
+
+
+
+void UProcessInputComponent::ProcessInputChangeTargetLongPressed(const FInputActionValue& Value)
+{
+	auto EndPressTime = UGameplayStatics::GetTimeSeconds(GetWorld());
+	if ((EndPressTime - StartPressTime) > 2.0f)
+	{
+		const auto FightCharacter = Cast<AGameFightCharacter>(GetOwner());
+		check(FightCharacter);
+		FightCharacter->ChangeTarget();
+	}
 }
 
