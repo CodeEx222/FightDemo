@@ -3,23 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FightDemo/Anim/AnimNotifyProcess.h"
+#include "GameFightBase.h"
 #include "Components/WidgetComponent.h"
-#include "GameFramework/Character.h"
 #include "GameFightCharacter.generated.h"
 
 
-class UFightAnimNotifyState;
-class UFightAnimNotify;
-class UHeadView;
-class UPlayerAttributeComponent;
 class UProcessInputComponent;
-class UFightComponent;
-enum class EAnimNotifyState : uint8;
-enum class EInputEnum : uint8;
 
 UCLASS(Blueprintable)
-class FIGHTDEMO_API AGameFightCharacter : public ACharacter, public IAnimNotifyProcess
+class FIGHTDEMO_API AGameFightCharacter : public AGameFightBase
 {
 	GENERATED_BODY()
 
@@ -36,46 +28,18 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// 战斗组件
-	UPROPERTY(EditAnywhere, BlueprintReadWrite )
-	UFightComponent* FightComponent;
-
 	// 输入组件
 	UPROPERTY(EditAnywhere, BlueprintReadWrite )
 	UProcessInputComponent* ProcessInputComponent;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	void UpdateActorRotator();
 
-	// 玩家属性组件
-	UPROPERTY(EditAnywhere, BlueprintReadWrite )
-	UPlayerAttributeComponent* PlayerAttributeComponent;
 
 	// 玩家头显UI
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UI, meta = (AllowPrivateAccess = "true"))
 	UWidgetComponent* HeadViewUI;
-
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	AGameFightCharacter* PlayerFightTarget;
-
-
-
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "连击数量"))
-	int AttackNum;
-
-	bool canFanJi;
-
-	UFUNCTION(BlueprintCallable)
-	void UpdateActorRotator();
-
-
-	UFUNCTION(BlueprintCallable)
-	void ChangeTarget();
-
-	UFUNCTION(BlueprintCallable)
-	void ClearTarget();
 
 
 	bool IsAttackPlayer(AGameFightCharacter* Target);
@@ -85,12 +49,6 @@ public:
 	// 处理视角输入
 	UFUNCTION(BlueprintCallable)
 	void DoLook(float Yaw, float Pitch);
-
-	UFUNCTION(BlueprintCallable, Category="AnimNotify")
-	virtual void DoAnimNotify(UFightAnimNotify* AnimNotify) override;
-
-	UFUNCTION(BlueprintCallable, Category="AnimNotify")
-	virtual void DoAnimNotifyState(UFightAnimNotifyState* AnimNotyfy, bool bState) override;
 
 };
 

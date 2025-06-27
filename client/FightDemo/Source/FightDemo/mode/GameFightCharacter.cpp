@@ -22,9 +22,9 @@ AGameFightCharacter::AGameFightCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	FightComponent = CreateDefaultSubobject<UFightComponent>(TEXT("FightComponent"));
+
 	ProcessInputComponent = CreateDefaultSubobject<UProcessInputComponent>(TEXT("ProcessInputComponent"));
-	PlayerAttributeComponent = CreateDefaultSubobject<UPlayerAttributeComponent>(TEXT("PlayerAttributeComponent"));
+
 
 	HeadViewUI = CreateDefaultSubobject<UWidgetComponent>(TEXT("HeadViewUI"));
 	HeadViewUI->SetupAttachment(RootComponent);
@@ -49,7 +49,8 @@ void AGameFightCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	// Set up action bindings
+
+		// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		// Moving
@@ -88,12 +89,14 @@ void AGameFightCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 			ProcessInputComponent, &UProcessInputComponent::ProcessInputChangeTargetLongPressed);
 	}
 
+
+
 }
 
 void AGameFightCharacter::UpdateActorRotator()
 {
 	FRotator TargetRot;
-	if (PlayerFightTarget == nullptr)
+	if (FightTarget == nullptr)
 	{
 		// 处于移动中 actor朝向向摄影机朝向旋转
 		auto camera = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
@@ -103,7 +106,7 @@ void AGameFightCharacter::UpdateActorRotator()
 	}
 	else
 	{
-		auto targetPos = PlayerFightTarget->GetActorLocation();
+		auto targetPos = FightTarget->GetActorLocation();
 		auto selfPos = this->GetActorLocation();
 		auto dir = targetPos - selfPos;
 		// 计算方向向量
@@ -128,32 +131,7 @@ void AGameFightCharacter::UpdateActorRotator()
 	SetActorRotation(actorRot);
 }
 
-void AGameFightCharacter::ChangeTarget()
-{
-	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGameFightCharacter::StaticClass(), FoundActors);
 
-	for (auto Actor : FoundActors)
-	{
-		if (Actor == this)
-		{
-			continue;
-		}
-		PlayerFightTarget = Cast<AGameFightCharacter>(Actor);
-		if (PlayerFightTarget != nullptr)
-		{
-			GetCharacterMovement()->MaxWalkSpeed = 130.0f; // 恢复默认移动速度
-			break;
-		}
-
-	}
-}
-
-void AGameFightCharacter::ClearTarget()
-{
-	PlayerFightTarget = nullptr;
-	GetCharacterMovement()->MaxWalkSpeed = 300.0f; // 恢复默认移动速度
-}
 
 bool AGameFightCharacter::IsAttackPlayer(AGameFightCharacter* Target)
 {
@@ -185,30 +163,29 @@ bool AGameFightCharacter::IsAttackPlayer(AGameFightCharacter* Target)
 
 void AGameFightCharacter::DoMove(float Right, float Forward)
 {
-	if (GetController() != nullptr)
-	{
-		// find out which way is forward
-		const FRotator Rotation = GetController()->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+	FRotator MoveRotation = FRotator::ZeroRotator;
+	// find out which way is forward
+	MoveRotation = GetController()->GetControlRotation();
 
-		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	const FRotator YawRotation(0, MoveRotation.Yaw, 0);
 
-		// get right vector
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	// get forward vector
+	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 
-		// add movement
-		AddMovementInput(ForwardDirection, Forward);
-		AddMovementInput(RightDirection, Right);
+	// get right vector
+	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-		UAnimInstance * AnimInstance =  GetMesh() ?  GetMesh()->GetAnimInstance() : nullptr;
-		check(AnimInstance != nullptr);
-		const auto OwnAnimInstance = Cast<UGameAnimInstance>(AnimInstance);
-		check(OwnAnimInstance != nullptr);
-		OwnAnimInstance->SetMoveDirection(Right,Forward);
+	// add movement
+	AddMovementInput(ForwardDirection, Forward);
+	AddMovementInput(RightDirection, Right);
 
-		UpdateActorRotator();
-	}
+	UAnimInstance * AnimInstance =  GetMesh() ?  GetMesh()->GetAnimInstance() : nullptr;
+	check(AnimInstance != nullptr);
+	const auto OwnAnimInstance = Cast<UGameAnimInstance>(AnimInstance);
+	check(OwnAnimInstance != nullptr);
+	OwnAnimInstance->SetMoveDirection(Right,Forward);
+
+	UpdateActorRotator();
 }
 
 void AGameFightCharacter::DoLook(float Yaw, float Pitch)
@@ -221,24 +198,6 @@ void AGameFightCharacter::DoLook(float Yaw, float Pitch)
 	}
 }
 
-void AGameFightCharacter::DoAnimNotify(UFightAnimNotify* AnimNotify)
-{
-	if (FightComponent == nullptr || AnimNotify == nullptr)
-	{
-		return;
-	}
-	FightComponent->OnAnimNotify(AnimNotify);
-}
-
-void AGameFightCharacter::DoAnimNotifyState(UFightAnimNotifyState* AnimNotyfy, bool bState)
-{
-	if (FightComponent == nullptr || AnimNotyfy == nullptr)
-	{
-		return;
-	}
-
-	FightComponent->OnAnimNotifyState(AnimNotyfy, bState);
-}
 
 
 
