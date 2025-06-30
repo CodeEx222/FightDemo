@@ -5,6 +5,7 @@
 #include "mode/FightInstance.h"
 #include "GameAnimInstance.generated.h"
 
+class AGameFightBase;
 struct FMontageBlendSettings;
 class AGameFightCharacter;
 /**
@@ -21,7 +22,7 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	AGameFightCharacter* gameCharacter = nullptr;
+	AGameFightBase* gameCharacter = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "左右移动值"))
 	float MoveActionX = 0.f;
@@ -33,7 +34,7 @@ public:
 
 
 	UFUNCTION(BlueprintCallable)
-	void SetMoveDirection(float MoveX,float MoveY);
+	void CalMoveDirByVelocity();
 
 	UFUNCTION()
 	float PlayAnimMontage(class UAnimMontage* AnimMontage,

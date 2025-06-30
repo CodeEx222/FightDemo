@@ -11,6 +11,7 @@
 #include "FightDemo/mode/FightInstance.h"
 #include "FightComponent.generated.h"
 
+class AGameFightBase;
 struct FInputElement;
 class UGameAnimInstance;
 class AGameFightCharacter;
@@ -62,8 +63,8 @@ public:
 
 
 	void PlaySkill(FAttackAnimTable* SkillToPlay);
-	void PlayBeAttackSkill(AGameFightCharacter* AttackActor ,FGameplayTag AttackTag);
-	void PlayBlockAttackSkill(AGameFightCharacter* AttackActor ,FGameplayTag AttackTag);
+	void PlayBeAttackSkill(AGameFightBase* AttackActor ,FGameplayTag AttackTag);
+	void PlayBlockAttackSkill(AGameFightBase* AttackActor ,FGameplayTag AttackTag);
 
 	virtual void OnAnimNotify(UAnimNotify * Notify);
 	virtual void OnAnimNotifyState(UAnimNotifyState * NotifyState, bool bStart);
@@ -77,7 +78,7 @@ public:
 	bool GetPlayerActionState(EPlayerState Type) const;
 
 	// 攻击玩家
-	AGameFightCharacter* GetAttackCharacter(bool& OutIsMove);
+	AGameFightBase* GetAttackCharacter(bool& OutIsMove);
 
 
 	// 闪避
@@ -92,9 +93,9 @@ private:
 	std::shared_ptr<std::bitset<32>> PlayerActionStateBitset;
 
 	UPROPERTY()
-	AGameFightCharacter* OwnCharacterPtr;
+	AGameFightBase* OwnCharacterPtr;
 
-	AGameFightCharacter* GetOwnCharacter();
+	AGameFightBase* GetOwnCharacter();
 
 	UPROPERTY()
 	UGameAnimInstance* OwnAnimInstance;

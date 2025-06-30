@@ -13,11 +13,11 @@
 #define TAG(x) UGameplayTagsManager::Get().RequestGameplayTag(TEXT(x))
 
 
-AGameFightCharacter* UFightComponent::GetOwnCharacter()
+AGameFightBase* UFightComponent::GetOwnCharacter()
 {
 	if (OwnCharacterPtr == nullptr)
 	{
-		OwnCharacterPtr = Cast<AGameFightCharacter>(GetOwner());
+		OwnCharacterPtr = Cast<AGameFightBase>(GetOwner());
 	}
 
 	check(OwnCharacterPtr != nullptr);
@@ -174,11 +174,11 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 	CurrentAnimTable = SkillToPlay;
 	// 要播放的动画
 	// 需要查看目标或者前方180米是否有人, 有人的话就播放inplace动画 有人比较远播放 move动画 没人就播放inplace动画
-	bool outIsMove;
-	auto target = GetAttackCharacter(outIsMove);
+	bool bOutIsMove;
+	auto target = GetAttackCharacter(bOutIsMove);
 
 	UAnimMontage* PlayMontage = nullptr;
-	if (outIsMove)
+	if (bOutIsMove)
 	{
 		const auto Anim = SkillToPlay->ActionAnimMontageMove;
 		PlayMontage = Anim.LoadSynchronous();
@@ -195,7 +195,7 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 	GameCharaterState = ECharaterState::CharaterState_Attacking;
 }
 
-void UFightComponent::PlayBeAttackSkill(AGameFightCharacter* AttackActor ,FGameplayTag AttackTag)
+void UFightComponent::PlayBeAttackSkill(AGameFightBase* AttackActor ,FGameplayTag AttackTag)
 {
 	// 要播放的动画
 
@@ -207,7 +207,7 @@ void UFightComponent::PlayBeAttackSkill(AGameFightCharacter* AttackActor ,FGamep
 	GameCharaterState = ECharaterState::CharaterState_BeAttack;
 }
 
-void UFightComponent::PlayBlockAttackSkill(AGameFightCharacter* AttackActor ,FGameplayTag AttackTag)
+void UFightComponent::PlayBlockAttackSkill(AGameFightBase* AttackActor ,FGameplayTag AttackTag)
 {
 	// 要播放的动画
 	const auto AttackDir = UFightInstance::CalculateHitDirection(GetOwnCharacter(),AttackActor );
@@ -468,16 +468,16 @@ bool UFightComponent::GetPlayerActionState(EPlayerState Type) const
 
 #pragma endregion
 
-AGameFightCharacter* UFightComponent::GetAttackCharacter(bool& OutIsMove)
+AGameFightBase* UFightComponent::GetAttackCharacter(bool& OutIsMove)
 {
 	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGameFightCharacter::StaticClass(), FoundActors);
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGameFightBase::StaticClass(), FoundActors);
 
 	OutIsMove = false;
 	for (auto Actor : FoundActors)
 	{
 		// 假如角色
-		auto Target = Cast<AGameFightCharacter>(Actor);
+		auto Target = Cast<AGameFightBase>(Actor);
 		if (Target == nullptr)
 		{
 			continue;

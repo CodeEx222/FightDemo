@@ -179,12 +179,6 @@ void AGameFightCharacter::DoMove(float Right, float Forward)
 	AddMovementInput(ForwardDirection, Forward);
 	AddMovementInput(RightDirection, Right);
 
-	UAnimInstance * AnimInstance =  GetMesh() ?  GetMesh()->GetAnimInstance() : nullptr;
-	check(AnimInstance != nullptr);
-	const auto OwnAnimInstance = Cast<UGameAnimInstance>(AnimInstance);
-	check(OwnAnimInstance != nullptr);
-	OwnAnimInstance->SetMoveDirection(Right,Forward);
-
 	UpdateActorRotator();
 }
 

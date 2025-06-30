@@ -36,6 +36,9 @@ void AGameFightBase::Tick(float DeltaTime)
 
 void AGameFightBase::MoveToDir(FRotator MoveDir, float Right, float Forward)
 {
+
+	SetActorRotation(MoveDir);
+
 	const FRotator YawRotation(0, MoveDir.Yaw, 0);
 
 	// get forward vector
@@ -47,15 +50,6 @@ void AGameFightBase::MoveToDir(FRotator MoveDir, float Right, float Forward)
 	// add movement
 	AddMovementInput(ForwardDirection, Forward);
 	AddMovementInput(RightDirection, Right);
-
-	UAnimInstance * AnimInstance =  GetMesh() ?  GetMesh()->GetAnimInstance() : nullptr;
-	check(AnimInstance != nullptr);
-	const auto OwnAnimInstance = Cast<UGameAnimInstance>(AnimInstance);
-	check(OwnAnimInstance != nullptr);
-	OwnAnimInstance->SetMoveDirection(Right,Forward);
-
-
-	SetActorRotation(MoveDir);
 
 }
 
