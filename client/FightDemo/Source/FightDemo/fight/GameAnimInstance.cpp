@@ -120,6 +120,13 @@ float UGameAnimInstance::PlayAnimSequenceByPath(const FString& AnimPath, const F
 		StaticLoadObject(UAnimSequence::StaticClass(), nullptr, *AnimSequencePathRef.ToString())
 	);
 
+	return PlayAnimSequence(AnimSequence, SlotNodeName, BlendInTime,
+		BlendOutTime, InPlayRate, LoopCount, InBlendOutTriggerTime);
+}
+
+float UGameAnimInstance::PlayAnimSequence(UAnimSequence* AnimSequence, FName SlotNodeName, float BlendInTime,
+	float BlendOutTime, float InPlayRate, int32 LoopCount, float InBlendOutTriggerTime)
+{
 	if (AnimSequence)
 	{
 		FMontageBlendSettings BlendInSettings(BlendInTime);
@@ -131,8 +138,8 @@ float UGameAnimInstance::PlayAnimSequenceByPath(const FString& AnimPath, const F
 }
 
 float UGameAnimInstance::PlayAnimationDirectly(UAnimSequence* AnimSequence, const FName SlotNodeName,
-	const FMontageBlendSettings& BlendInSettings, const FMontageBlendSettings& BlendOutSettings,
-	const float InPlayRate, const int32 LoopCount, const float InBlendOutTriggerTime)
+                                               const FMontageBlendSettings& BlendInSettings, const FMontageBlendSettings& BlendOutSettings,
+                                               const float InPlayRate, const int32 LoopCount, const float InBlendOutTriggerTime)
 {
 	if (!AnimSequence || !AnimSequence->GetSkeleton()) return 0.f;
 

@@ -45,6 +45,11 @@ public:
 		float BlendInTime = 0.1f, float BlendOutTime =0.1f,
 		float InPlayRate = 1.f, int32 LoopCount = 1, float InBlendOutTriggerTime = -1.f);
 
+	UFUNCTION(BlueprintCallable)
+	float PlayAnimSequence(UAnimSequence* AnimSequence, FName SlotNodeName,
+		float BlendInTime = 0.1f, float BlendOutTime =0.1f,
+		float InPlayRate = 1.f, int32 LoopCount = 1, float InBlendOutTriggerTime = -1.f);
+
 private:
 	float PlayAnimationDirectly(UAnimSequence* AnimSequence, FName SlotNodeName,
 		const FMontageBlendSettings& BlendInSettings, const FMontageBlendSettings& BlendOutSettings,
