@@ -11,7 +11,7 @@ public class FightDemo : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[]
 		{
 			"Core", "CoreUObject", "Engine", "InputCore",
-			"UMG"
+			"UMG", "StateTreeModule"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]		{
