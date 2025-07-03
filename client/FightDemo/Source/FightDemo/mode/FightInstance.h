@@ -25,45 +25,6 @@ enum class EHitDirection8 : uint8
 	FrontLeft  UMETA(DisplayName = "前左")
 };
 
-UENUM(BlueprintType)
-enum class ECharaterState : uint8
-{
-	CharaterState_None UMETA(DisplayName="无状态")  ,
-	CharaterState_Attacking UMETA(DisplayName="攻击"),
-	CharaterState_AttackingNext UMETA(DisplayName="可以继续攻击"),
-	CharaterState_Defending UMETA(DisplayName="防御"),
-	CharaterState_BeAttack UMETA(DisplayName="受击"),
-	CharaterState_Doge UMETA(DisplayName="闪避"),
-};
-
-UENUM(BlueprintType)
-enum class EAnimNotifyState : uint8
-{
-	Attack UMETA(DisplayName="攻击")  ,
-	AttackNext UMETA(DisplayName="下次攻击"),
-	ComboneEnd UMETA(DisplayName="连击结束"),
-	InputStart UMETA(DisplayName="预输入开始"),
-	InputEnd UMETA(DisplayName="预输入结束"),
-	BeAttackedStart UMETA(DisplayName="受击开始"),
-	BeAttackedEnd UMETA(DisplayName="受击结束"),
-	FanjiAttackedStart UMETA(DisplayName="反击开始"),
-	FanjiAttackedEnd UMETA(DisplayName="反击结束"),
-};
-
-
-// 玩家状态标识
-UENUM(BlueprintType)
-enum class EPlayerState : uint8
-{
-	None = 0 UMETA(DisplayName="无"),
-	InPlayAttack UMETA(DisplayName="是否在攻击中"),
-	InComboNext UMETA(DisplayName="是否准备播放下一个战斗"),
-	CanAttack UMETA(DisplayName="可以攻击"),
-	CanRecordInput UMETA(DisplayName="可以记录输入"),
-	BeBlockAttack UMETA(DisplayName="被格挡攻击"),
-	WuDi UMETA(DisplayName="无敌状态"),
-};
-
 // 输入标识
 UENUM(BlueprintType)
 enum class EInputEnum : uint8

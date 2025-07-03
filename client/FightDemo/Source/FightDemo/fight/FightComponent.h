@@ -30,8 +30,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FInputElement> MoveInputArray;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "人物状态"))
-	ECharaterState GameCharaterState;
+	//当前已拥有的Tag
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tags")
+	FGameplayTagContainer ActiveGameplayTags;
+
+	//当前已拥有的Tag
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tags")
+	FGameplayTagContainer ActiveMutexGameplayTags;
 
 	// 闪避对象
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -74,9 +79,6 @@ public:
 	void AddNewInput(const FInputElement& NewInput);
 
 
-	void SetPlayerActionState(EPlayerState Type , bool Value = true) const;
-	bool GetPlayerActionState(EPlayerState Type) const;
-
 	// 攻击玩家
 	AGameFightBase* GetAttackCharacter(bool& OutIsMove);
 
@@ -88,9 +90,6 @@ public:
 private:
 	void CheckAttack();
 	FAttackAnimTable* CheckInput();
-
-	// 动作状态指示
-	std::shared_ptr<std::bitset<32>> PlayerActionStateBitset;
 
 	UPROPERTY()
 	AGameFightBase* OwnCharacterPtr;

@@ -48,8 +48,6 @@ UFightComponent::UFightComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
-	PlayerActionStateBitset = std::make_shared<std::bitset<32>>();
-
 }
 
 
@@ -64,12 +62,8 @@ void UFightComponent::BeginPlay()
 	// ...
 	//FightTimeLineObj = new TFightTimeLine<USkillActionInfo>();
 
-	// 可以攻击
-	SetPlayerActionState(EPlayerState::CanAttack);
-	// 可以记录输入
-	SetPlayerActionState(EPlayerState::CanRecordInput);
-
-
+	ActiveGameplayTags.AddTag(TAG("game.State.Movement"));
+	ActiveMutexGameplayTags.AddTag(TAG("game.MutexState.Normal"));
 
 }
 
@@ -116,13 +110,11 @@ void UFightComponent::AddInput(EInputEnum InputEnum)
 			{
 				AddNewInput( {InputEnum, GameTime, true} );
 				// 假设当前人物没有在攻击状态的话,就可以检测出招
-				if ( GetPlayerActionState(EPlayerState::CanAttack))
+				if (ActiveMutexGameplayTags.HasTag(TAG("game.MutexState.Normal")))
 				{
 					CheckAttack();
 				}
-
 			}
-
 		break;
 	}
 	case EInputEnum::Defend:
@@ -192,6 +184,8 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 
 	CharacterPlayMontage(PlayMontage);
 	// 设置攻击状态
+
+	ActiveMutexGameplayTags.AddTag(TAG("game.MutexState.Normal"))
 	GameCharaterState = ECharaterState::CharaterState_Attacking;
 }
 
@@ -454,19 +448,6 @@ FAttackAnimTable* UFightComponent::CheckInput()
 
 #pragma endregion
 
-#pragma region 玩家状态检测
-
-void UFightComponent::SetPlayerActionState(EPlayerState Type, const bool Value /* = true */) const
-{
-	PlayerActionStateBitset->set(static_cast<size_t>(Type), Value);
-}
-
-bool UFightComponent::GetPlayerActionState(EPlayerState Type) const
-{
-	return  PlayerActionStateBitset->test(static_cast<size_t>(Type));
-}
-
-#pragma endregion
 
 AGameFightBase* UFightComponent::GetAttackCharacter(bool& OutIsMove)
 {

@@ -7,6 +7,8 @@
 #include "GameFramework/Character.h"
 #include "GameFightBase.generated.h"
 
+class UFightAnimNotifyState;
+class UFightAnimNotify;
 class UPlayerAttributeComponent;
 class UFightComponent;
 
