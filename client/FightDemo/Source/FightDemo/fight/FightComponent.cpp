@@ -6,11 +6,11 @@
 #include "FightDemo/Anim/AnimDefine.h"
 #include "GameAnimInstance.h"
 #include "GameplayTagsManager.h"
+#include "PlayerAttributeComponent.h"
 #include "ProcessInputComponent.h"
 #include "FightDemo/mode/GameFightCharacter.h"
 #include "Kismet/GameplayStatics.h"
-
-#define TAG(x) UGameplayTagsManager::Get().RequestGameplayTag(TEXT(x))
+#include "util/GameTagDefine.h"
 
 
 AGameFightBase* UFightComponent::GetOwnCharacter()
@@ -63,7 +63,7 @@ void UFightComponent::BeginPlay()
 	//FightTimeLineObj = new TFightTimeLine<USkillActionInfo>();
 
 	ActiveGameplayTags.AddTag(TAG("game.State.Movement"));
-	ActiveMutexGameplayTags.AddTag(TAG("game.MutexState.Normal"));
+	ActiveMutexGameplayTags = TAG("game.MutexState.Normal");
 
 }
 
@@ -104,48 +104,61 @@ void UFightComponent::AddInput(EInputEnum InputEnum)
 		}
 	case EInputEnum::NormalAttack:
 	case EInputEnum::HeavyAttack:
-	{
-			// 判断当前人物状态是否可以接受指令
-			if ( GetPlayerActionState(EPlayerState::CanRecordInput))
+		{
+			// 判断当前人物状态是否可以接受指令 普通状态 或者是播放动作可以输入状态
+			if (ActiveMutexGameplayTags == TAG("game.MutexState.Normal") ||
+				ActiveGameplayTags.HasTagExact(TAG("game.animNotifyState.input" )))
 			{
 				AddNewInput( {InputEnum, GameTime, true} );
-				// 假设当前人物没有在攻击状态的话,就可以检测出招
-				if (ActiveMutexGameplayTags.HasTag(TAG("game.MutexState.Normal")))
-				{
-					CheckAttack();
-				}
+				CheckAttack();
 			}
-		break;
-	}
+			break;
+		}
 	case EInputEnum::Defend:
 		{
 			// 防御输入 打印日志
 			//UE_LOG(LogTemp, Warning, TEXT("Defend Input Received"));
-			if (GameCharaterState == ECharaterState::CharaterState_None)
+
+			// 判断当前人物状态是否可以接受指令 普通状态 或者是播放动作可以输入状态
+			if (ActiveMutexGameplayTags == TAG("game.MutexState.Normal") ||
+				ActiveGameplayTags.HasTagExact(TAG("game.animNotifyState.input" )))
+			{
+				AddNewInput( {InputEnum, GameTime, true} );
+
+				PlayBlock(true);
+			}
 			{
 				// 假如对面是进攻状态,看是否能进入防御反击
-				bool isPlayAttack = false;
-				bool outIsMove;
-				auto target = GetAttackCharacter(outIsMove);
-				if (target != nullptr)
-				{
-					// 判断目标对象是否
-					if (auto fightComponent = target->GetComponentByClass<UFightComponent>(); fightComponent != nullptr)
-					{
-						if (fightComponent->GetPlayerActionState(EPlayerState::BeBlockAttack))
-						{
-							isPlayAttack = true;
-							// 播放反击动
+				// bool isPlayAttack = false;
+				// bool outIsMove;
+				// auto target = GetAttackCharacter(outIsMove);
+				// if (target != nullptr)
+				// {
+				// 	// 判断目标对象是否
+				// 	if (auto fightComponent = target->GetComponentByClass<UFightComponent>(); fightComponent != nullptr)
+				// 	{
+				// 		if (fightComponent->GetPlayerActionState(EPlayerState::BeBlockAttack))
+				// 		{
+				// 			isPlayAttack = true;
+				// 			// 播放反击动
+				//
+				// 		}
+				// 	}
+				// }
 
-						}
-					}
-				}
+				// if (!isPlayAttack)
+				// {
+				// 	// 格挡
+				// }
 
-				if (!isPlayAttack)
-				{
-					// 格挡
-				}
-
+			}
+		}
+		break;
+	case EInputEnum::DefendRelease:
+		{
+			if (ActiveMutexGameplayTags == TAG("game.MutexState.Defending") )
+			{
+				PlayBlock(false);
 			}
 		}
 		break;
@@ -161,7 +174,7 @@ void UFightComponent::AddInput(EInputEnum InputEnum)
 }
 
 
-void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
+void UFightComponent::PlayAttackSkill(FAttackAnimTable* SkillToPlay)
 {
 	CurrentAnimTable = SkillToPlay;
 	// 要播放的动画
@@ -169,7 +182,18 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 	bool bOutIsMove;
 	auto target = GetAttackCharacter(bOutIsMove);
 
-	UAnimMontage* PlayMontage = nullptr;
+
+	if (target != nullptr)
+	{
+		// actor 旋转过去
+		const auto OwnCharacter = GetOwnCharacter();
+		const auto TargetLocation = target->GetActorLocation();
+		const auto OwnLocation = OwnCharacter->GetActorLocation();
+		const auto TargetRotator = (TargetLocation - OwnLocation).Rotation();
+		OwnCharacter->SetGameActorRotation(TargetRotator);
+	}
+
+	UAnimMontage* PlayMontage;
 	if (bOutIsMove)
 	{
 		const auto Anim = SkillToPlay->ActionAnimMontageMove;
@@ -184,9 +208,7 @@ void UFightComponent::PlaySkill(FAttackAnimTable* SkillToPlay)
 
 	CharacterPlayMontage(PlayMontage);
 	// 设置攻击状态
-
-	ActiveMutexGameplayTags.AddTag(TAG("game.MutexState.Normal"))
-	GameCharaterState = ECharaterState::CharaterState_Attacking;
+	ActiveMutexGameplayTags = TAG("game.MutexState.Attacking");
 }
 
 void UFightComponent::PlayBeAttackSkill(AGameFightBase* AttackActor ,FGameplayTag AttackTag)
@@ -198,15 +220,37 @@ void UFightComponent::PlayBeAttackSkill(AGameFightBase* AttackActor ,FGameplayTa
 	const auto AttackDir = UFightInstance::CalculateHitDirection(GetOwnCharacter(),AttackActor );
 	PlayHit(AttackDir,AttackTag);
 	// 设置受击状态
-	GameCharaterState = ECharaterState::CharaterState_BeAttack;
+	ActiveMutexGameplayTags = TAG("game.MutexState.Hit");
+	// 清空连击状态
+	ActiveGameplayTags.RemoveTag(TAG("game.State.Combat.Attack.Combo"));
 }
 
-void UFightComponent::PlayBlockAttackSkill(AGameFightBase* AttackActor ,FGameplayTag AttackTag)
+void UFightComponent::PlayBlockBeAttack(AGameFightBase* AttackActor ,FGameplayTag AttackTag)
 {
-	// 要播放的动画
+	// // 要播放的动画
 	const auto AttackDir = UFightInstance::CalculateHitDirection(GetOwnCharacter(),AttackActor );
-	PlayBlock(AttackDir,AttackTag,true);
+	PlayBlockHit(AttackDir,AttackTag);
+	// const auto Anim = BlockBeAttackAnimMontage;
+	// const auto PlayMontage = Anim.LoadSynchronous();
+	//
+	// CharacterPlayMontage(PlayMontage);
+	// // 设置格挡状态
+	//
+	// GameCharaterState = ECharaterState::CharaterState_BeAttack;
+}
 
+void UFightComponent::PlayBlockBreak(AGameFightBase* AttackActor, FGameplayTag AttackTag)
+{
+	auto bIsMove = AttackTag.MatchesTag(TAG("game.animNotify.hit.up.heavy")) ||
+		AttackTag.MatchesTag(TAG("game.animNotify.hit.down.heavy"));
+
+	FString finallyPath= "/Game/common/FightAnimations/Block/A_Block_Break.A_Block_Break";
+	if (bIsMove)
+	{
+		finallyPath= "/Game/common/FightAnimations/Block/A_Block_Break_M.A_Block_Break_M";
+	}
+
+	GetAnimInstance()->PlayAnimSequenceByPath(finallyPath,"SkillSlot");
 }
 
 
@@ -214,32 +258,47 @@ void UFightComponent::PlayDoge()
 {
 	const auto AnimInstance = GetAnimInstance();
 
-	bool bIsPlaying = AnimInstance->Montage_IsActive(nullptr);
+	// bool bIsPlaying = AnimInstance->Montage_IsActive(nullptr);
+	//
+	// if (bIsPlaying && GetPlayerActionState(EPlayerState::CanAttack))
+	// {
+	// 	return;
+	// }
+	//
+	// // 要播放的动画
+	// const auto Anim = DogeAnimMontage;
+	// const auto PlayMontage = Anim.LoadSynchronous();
+	//
+	// CharacterPlayMontage(PlayMontage);
+	// 设置闪避状态
+	ActiveMutexGameplayTags = TAG("game.MutexState.Dodging");
+	// 清空连击状态
+	ActiveGameplayTags.RemoveTag(TAG("game.State.Combat.Attack.Combo"));
+}
 
-	if (bIsPlaying && GetPlayerActionState(EPlayerState::CanAttack))
+void UFightComponent::PlayBlock(bool EnterValue)
+{
+	// 播放防御动作
+	const auto AnimInstance = GetAnimInstance();
+	if (AnimInstance != nullptr)
 	{
-		return;
+		AnimInstance->IsInBlock = EnterValue;
 	}
 
-	// 要播放的动画
-	const auto Anim = DogeAnimMontage;
-	const auto PlayMontage = Anim.LoadSynchronous();
+	if (EnterValue)
+	{
+		ActiveMutexGameplayTags = TAG("game.MutexState.Defending");
+		// 清空连击状态
+		ActiveGameplayTags.RemoveTag(TAG("game.State.Combat.Attack.Combo"));
+	}
+	else
+	{
+		ActiveMutexGameplayTags = TAG("game.MutexState.Normal");
+	}
 
-	CharacterPlayMontage(PlayMontage);
-	// 设置闪避状态
-	GameCharaterState = ECharaterState::CharaterState_Doge;
 }
 
-void UFightComponent::PlayBlockBeAttack()
-{
-	// 要播放的动画
-	const auto Anim = BlockBeAttackAnimMontage;
-	const auto PlayMontage = Anim.LoadSynchronous();
 
-	CharacterPlayMontage(PlayMontage);
-	// 设置闪避状态
-	GameCharaterState = ECharaterState::CharaterState_BeAttack;
-}
 
 void UFightComponent::CheckAttack()
 {
@@ -255,19 +314,14 @@ void UFightComponent::CheckAttack()
 		InputArray[i].IsNewCheck = false;
 	}
 
-	//把接受输入置为false
-	SetPlayerActionState(EPlayerState::CanRecordInput,false);
-
 	// 检测当前是否在播放战斗动作
-	if (GetPlayerActionState(EPlayerState::InPlayAttack))
+	if (ActiveMutexGameplayTags == TAG("game.MutexState.Attacking"))
 	{
-		// 如果在播放战斗动作,那么就把当前的动作结束, 进入连击状态
-		SetPlayerActionState(EPlayerState::InComboNext);
+		// 如果在播放战斗动作, 进入连击状态
+		ActiveGameplayTags.AddTag(TAG("game.State.Combat.Attack.Combo"));
 	}
-	SetPlayerActionState(EPlayerState::InPlayAttack);
 
-	SetPlayerActionState(EPlayerState::CanAttack,false);
-	PlaySkill(SkillToPlay);
+	PlayAttackSkill(SkillToPlay);
 }
 
 void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
@@ -287,19 +341,59 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 		if (target != nullptr && !outIsMove)
 		{
 			// 判断目标对象是否
-			if (const auto TargetFightComponent = target->GetComponentByClass<UFightComponent>(); TargetFightComponent != nullptr)
+			if (const auto TargetFightComponent = target->GetComponentByClass<UFightComponent>();
+				TargetFightComponent != nullptr)
 			{
-				if (!TargetFightComponent->GetPlayerActionState(EPlayerState::WuDi))
+				// 检测是不是无敌
+				if (!TargetFightComponent->ActiveGameplayTags.HasTag(TAG("game.SpecialState.Invincible")))
 				{
-					if (TargetFightComponent->GameCharaterState == ECharaterState::CharaterState_Defending)
+					// 假如目标处于格挡状态, 播放格挡受击动作
+					if (TargetFightComponent->ActiveMutexGameplayTags == TAG("game.MutexState.Defending"))
 					{
-						// 防御
-						PlayBlockBeAttack();
+						// 计算伤害
+						const auto ChangeValue = CurrentAnimTable->AttackBlockValue;
+						if (target->PlayerAttributeComponent != nullptr)
+						{
+							// 减少目标的血量
+							target->PlayerAttributeComponent->ChangeBlockValue(ChangeValue);
+						}
+
+						if (target->PlayerAttributeComponent->BlockValue.Value >=
+							target->PlayerAttributeComponent->BlockValue.MaxValue )
+						{
+							// 格挡破防
+							TargetFightComponent->PlayBlockBreak(GetOwnCharacter(),fightNotify->AnimTag);
+						}
+						else
+						{
+							// 防御受击
+							TargetFightComponent->PlayBlockBeAttack(GetOwnCharacter(),fightNotify->AnimTag);
+						}
+
+
 					}
 					else
 					{
-						// 播放攻击动作
-						TargetFightComponent->PlayBeAttackSkill(GetOwnCharacter(),fightNotify->AnimTag);
+						// 计算伤害
+						const auto ChangeValue = CurrentAnimTable->AttackHPValue;
+						if (target->PlayerAttributeComponent != nullptr)
+						{
+							// 减少目标的血量
+							target->PlayerAttributeComponent->ChangeHpValue(-ChangeValue);
+						}
+
+						if (target->PlayerAttributeComponent->HPValue.Value > 0 )
+						{
+							// 播放受击动作
+							TargetFightComponent->PlayBeAttackSkill(GetOwnCharacter(),fightNotify->AnimTag);
+						}
+						else
+						{
+							// 目标死亡
+
+						}
+
+
 					}
 				}
 			}
@@ -307,9 +401,7 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 	}
 	else if (fightNotify->AnimTag.MatchesTag(TAG("game.animNotify.nextAttack")))
 	{
-		// 可以播放下次攻击
-		SetPlayerActionState(EPlayerState::CanAttack);
-		GameCharaterState = ECharaterState::CharaterState_AttackingNext;
+		// 动作结束
 		CheckAttack();
 	}
 }
@@ -323,44 +415,37 @@ void UFightComponent::OnAnimNotifyState(UAnimNotifyState * NotifyState, bool bSt
 		return;
 	}
 
+	// 输入区间
+	if (bStart)
+	{
+		ActiveGameplayTags.AddTag(fightNotifyState->AnimTag);
+	}
+	else
+	{
+		ActiveGameplayTags.RemoveTag(fightNotifyState->AnimTag);
+	}
+
 	if (fightNotifyState->AnimTag.MatchesTag(TAG("game.animNotifyState.lianji")))
 	{
 		// 连击区间
-		SetPlayerActionState(EPlayerState::InPlayAttack,bStart);
-
 		if (bStart)
 		{
-			// 新的开始, 把连击置空
-			SetPlayerActionState(EPlayerState::InComboNext, false);
+			// 连击开始,检测输入 看看是否可以播放下次动作
+			CheckAttack();
 		}
 		else
 		{
-			// 连击有效区间
-			if (GetPlayerActionState(EPlayerState::InComboNext))
+			// 假如处于连击当中, 不会清空输入
+			if (ActiveGameplayTags.HasTag(TAG("game.State.Combat.Attack.Combo")))
 			{
-				// 是连击结束的,就不需要清空输入了
+
 			}
 			else
 			{
-				// 其他结束,清空输入
+				// 连击结束,清空输入
 				InputArray.Empty();
 			}
 		}
-	}
-	else if (fightNotifyState->AnimTag.MatchesTag(TAG("game.animNotifyState.fanji")))
-	{
-		// 反击区间
-		SetPlayerActionState(EPlayerState::BeBlockAttack, bStart);
-	}
-	else if (fightNotifyState->AnimTag.MatchesTag(TAG("game.animNotifyState.input")))
-	{
-		// 输入区间
-		SetPlayerActionState(EPlayerState::CanRecordInput, true);
-	}
-	else if (fightNotifyState->AnimTag.MatchesTag(TAG("game.animNotifyState.wudi")))
-	{
-		// 无敌区间
-		SetPlayerActionState(EPlayerState::WuDi, bStart);
 	}
 
 }
@@ -517,9 +602,16 @@ void UFightComponent::OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInte
 	// UE_LOG( LogTemp, Warning, TEXT("OnMontagePlayBlendingOut: %s, Interrupted: %s, Id: %d"),
 	// 		*Montage->GetName(), bInterrupted ? TEXT("true") : TEXT("false") ,InstanceID);
 
+	// 动作融出, 这时候出现几种情况
+	// 1. 动作播放完毕, 后续没有其他动作了, 这时候要把互斥状态置位普通, 连击状态清空
+	// 2. 动作播放完毕, 后续攻击动作
+	// 3. 动作被打断,
+
+	// 说明后续没有动作了
 	if (InstanceID == AnimPlayInstanceID)
 	{
-		GameCharaterState = ECharaterState::CharaterState_None;
+		ActiveMutexGameplayTags = TAG("game.MutexState.Normal");
+		ActiveGameplayTags.RemoveTag(TAG("game.State.Combat.Attack.Combo"));
 	}
 }
 
@@ -602,15 +694,86 @@ void UFightComponent::PlayHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag
 	GetAnimInstance()->PlayAnimSequenceByPath(finallyPath,"SkillSlot");
 }
 
-void UFightComponent::PlayBlock(EHitDirection8 AttackerDir, FGameplayTag AttackTag, bool bIsMove)
+void UFightComponent::PlayBlockHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag)
 {
 
 	// /Game/common/FightAnimations/Hit/InPlace/A_Hit_Back_IP.A_Hit_Back_IP
 	// /Game/common/FightAnimations/Hit/Move/A_HiBack_M.A_HiBack_M
 
-	GetAnimInstance()->PlayAnimSequenceByPath("/Game/common/FightAnimations/Hit/Move/A_HiBack_M.A_HiBack_M",
-		"SkillSlot");
+	FString AnimPath= "/Game/common/FightAnimations/Block/";
+
+	FString SkillName = "";
+	if (AttackTag.MatchesTag(TAG("game.animNotify.hit.down")))
+	{
+		SkillName = "A_Block_Leg";
+	}
+	else
+	{
+		SkillName = "A_BlockHit_";
+
+		auto bIsMove = AttackTag.MatchesTag(TAG("game.animNotify.hit.up.heavy")) ||
+		AttackTag.MatchesTag(TAG("game.animNotify.hit.down.heavy"));
+
+		if (bIsMove)
+		{
+			AnimPath += "Move/";
+		}
+		else
+		{
+			AnimPath += "InPlace/";
+		}
+
+		switch (AttackerDir)
+		{
+		case EHitDirection8::None:
+		case EHitDirection8::Front:
+			SkillName += "F_";
+			break;
+		case EHitDirection8::FrontRight:
+			SkillName += "F_";
+			break;
+		case EHitDirection8::Right:
+			SkillName += "R_";
+			break;
+		case EHitDirection8::BackRight:
+			SkillName = "R_";
+			break;
+		case EHitDirection8::Back:
+			SkillName = "";
+			break;
+		case EHitDirection8::BackLeft:
+			SkillName = "L_";
+			break;
+		case EHitDirection8::Left:
+			SkillName += "L_";
+			break;
+		case EHitDirection8::FrontLeft:
+			SkillName += "F_";
+			break;
+		}
+
+		if (bIsMove)
+		{
+			SkillName += "M";
+		}
+		else
+		{
+			SkillName += "IP";
+		}
+	}
+
+
+	auto finallyPath = AnimPath + SkillName + "." + SkillName;
+
+	// /Game/common/FightAnimations/Hit/InPlace/A_Hit_Back_IP.A_Hit_Back_IP
+	// /Game/common/FightAnimations/Hit/Move/A_HiBack_M.A_HiBack_M
+	// 打印到屏幕上
+	UE_LOG(LogTemp, Warning, TEXT("PlayBlockHit AnimPath: %s"), *finallyPath);
+
+	GetAnimInstance()->PlayAnimSequenceByPath(finallyPath,"SkillSlot");
 }
+
+
 
 
 

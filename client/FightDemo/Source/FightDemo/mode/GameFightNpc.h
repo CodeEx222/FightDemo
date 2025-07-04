@@ -8,6 +8,8 @@
 #include "GameFramework/Character.h"
 #include "GameFightNpc.generated.h"
 
+class UWidgetComponent;
+
 UCLASS()
 class FIGHTDEMO_API AGameFightNpc : public AGameFightBase
 {
@@ -24,5 +26,9 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	// 玩家头显UI
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = UI)
+	UWidgetComponent* HeadViewUI;
 
 };

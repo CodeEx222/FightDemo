@@ -37,6 +37,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(BlueprintCallable)
+	void SetGameActorRotation(FRotator NewRotation);
+
 	// 处理移动输入
 	UFUNCTION(BlueprintCallable)
 	void MoveToDir(FRotator MoveDir, float Right, float Forward);

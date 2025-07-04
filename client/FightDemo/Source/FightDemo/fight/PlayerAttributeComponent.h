@@ -21,10 +21,10 @@ public:
 	double MaxValue = 0.0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "回复速度"))
-	double RecoverValue = 0.0;
+	double RecoverValue = 20.0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "回复开始时间"))
-	double RecoverTime = 0.0;
+	double RecoverTime = 4.0;
 
 };
 

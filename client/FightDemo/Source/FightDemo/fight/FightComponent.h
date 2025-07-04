@@ -34,22 +34,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tags")
 	FGameplayTagContainer ActiveGameplayTags;
 
-	//当前已拥有的Tag
+	//当前互斥的Tag
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tags")
-	FGameplayTagContainer ActiveMutexGameplayTags;
-
-	// 闪避对象
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSoftObjectPtr<UAnimMontage> DogeAnimMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "格挡受击动画"))
-	TSoftObjectPtr<UAnimMontage> BlockBeAttackAnimMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "结束攻击动画"))
-	TSoftObjectPtr<UAnimMontage> EndAttackAnimMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "结束受击动画"))
-	TSoftObjectPtr<UAnimMontage> EndBeAttackAnimMontage;
+	FGameplayTag ActiveMutexGameplayTags;
 
 protected:
 	// Called when the game starts
@@ -67,9 +54,10 @@ public:
 	void AddInput(EInputEnum InputEnum);
 
 
-	void PlaySkill(FAttackAnimTable* SkillToPlay);
+	void PlayAttackSkill(FAttackAnimTable* SkillToPlay);
 	void PlayBeAttackSkill(AGameFightBase* AttackActor ,FGameplayTag AttackTag);
-	void PlayBlockAttackSkill(AGameFightBase* AttackActor ,FGameplayTag AttackTag);
+	void PlayBlockBeAttack(AGameFightBase* AttackActor ,FGameplayTag AttackTag);
+	void PlayBlockBreak(AGameFightBase* AttackActor ,FGameplayTag AttackTag);
 
 	virtual void OnAnimNotify(UAnimNotify * Notify);
 	virtual void OnAnimNotifyState(UAnimNotifyState * NotifyState, bool bStart);
@@ -85,7 +73,10 @@ public:
 
 	// 闪避
 	void PlayDoge();
-	void PlayBlockBeAttack();
+
+	UFUNCTION(BlueprintCallable)
+	void PlayBlock(bool EnterValue);
+
 
 private:
 	void CheckAttack();
@@ -115,5 +106,5 @@ private:
 
 	// 播放受击
 	void PlayHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag);
-	void PlayBlock(EHitDirection8 AttackerDir, FGameplayTag AttackTag, bool bIsMove);
+	void PlayBlockHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag);
 };

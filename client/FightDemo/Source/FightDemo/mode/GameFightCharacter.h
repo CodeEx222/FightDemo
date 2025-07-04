@@ -38,7 +38,7 @@ public:
 
 
 	// 玩家头显UI
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UI, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = UI)
 	UWidgetComponent* HeadViewUI;
 
 

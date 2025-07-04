@@ -15,6 +15,7 @@
 #include "mode/FightInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "ui/HeadView.h"
+#include "util/GameTagDefine.h"
 
 // Sets default values
 AGameFightCharacter::AGameFightCharacter()
@@ -128,7 +129,7 @@ void AGameFightCharacter::UpdateActorRotator()
 	auto gameDelta = GetWorld()->GetDeltaSeconds();
 	auto rot = FMath::RInterpTo(setActorRot, TargetRot, gameDelta  , 15);
 	actorRot.Yaw = rot.Yaw;
-	SetActorRotation(actorRot);
+	SetGameActorRotation(actorRot);
 }
 
 
@@ -163,6 +164,11 @@ bool AGameFightCharacter::IsAttackPlayer(AGameFightCharacter* Target)
 
 void AGameFightCharacter::DoMove(float Right, float Forward)
 {
+	if (FightComponent->ActiveMutexGameplayTags != TAG("game.MutexState.Normal"))
+	{
+		return;
+	}
+
 	FRotator MoveRotation = FRotator::ZeroRotator;
 	// find out which way is forward
 	MoveRotation = GetController()->GetControlRotation();

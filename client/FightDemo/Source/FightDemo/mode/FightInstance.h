@@ -37,6 +37,7 @@ enum class EInputEnum : uint8
     NormalAttack  UMETA(DisplayName="轻击")  ,
     HeavyAttack  UMETA(DisplayName="重击")  ,
     Defend  UMETA(DisplayName="防御")  ,
+	DefendRelease  UMETA(DisplayName="防御释放")  ,
     Doge  UMETA(DisplayName="闪避")  ,
 };
 

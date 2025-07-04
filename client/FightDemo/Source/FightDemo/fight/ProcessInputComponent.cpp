@@ -14,7 +14,7 @@ UProcessInputComponent::UProcessInputComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 
 	// ...
 }
@@ -136,11 +136,20 @@ void UProcessInputComponent::ProcessInputMoveR(const FInputActionValue& Value)
 
 void UProcessInputComponent::ProcessInputBlockPressed(const FInputActionValue& Value)
 {
-
+	const auto FightCharacter = Cast<AGameFightCharacter>(GetOwner());
+	check(FightCharacter);
+	const auto FightComponent = FightCharacter->FightComponent;
+	check(FightComponent);
+	FightComponent->AddInput(EInputEnum::Defend);
 }
 
 void UProcessInputComponent::ProcessInputBlockReleased(const FInputActionValue& Value)
 {
+	const auto FightCharacter = Cast<AGameFightCharacter>(GetOwner());
+	check(FightCharacter);
+	const auto FightComponent = FightCharacter->FightComponent;
+	check(FightComponent);
+	FightComponent->AddInput(EInputEnum::DefendRelease);
 }
 
 void UProcessInputComponent::ProcessInputChangeTargetPressed(const FInputActionValue& Value)
@@ -149,7 +158,7 @@ void UProcessInputComponent::ProcessInputChangeTargetPressed(const FInputActionV
 	check(FightCharacter);
 	StartPressTime = UGameplayStatics::GetTimeSeconds(GetWorld());
 	FightCharacter->ChangeTarget();
-	UE_LOG(LogTemp, Warning, TEXT("Player changed target"));
+	//UE_LOG(LogTemp, Warning, TEXT("Player changed target"));
 }
 
 

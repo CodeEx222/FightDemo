@@ -29,6 +29,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Meta = (DisplayName = "前后移动值"))
 	float MoveActionY = 0.f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool IsInBlock = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EHitDirection8 MoveDirection = EHitDirection8::None;
 

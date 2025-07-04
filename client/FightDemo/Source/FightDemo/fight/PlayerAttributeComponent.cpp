@@ -5,6 +5,7 @@
 
 #include "FightDemo/mode/GameFightCharacter.h"
 #include "FightDemo/ui/HeadView.h"
+#include "mode/GameFightNpc.h"
 
 
 // Sets default values for this component's properties
@@ -43,9 +44,13 @@ void UPlayerAttributeComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	const auto currentTime = GetWorld()->GetTimeSeconds();
 	if (currentTime - LastChangeBlockTime > BlockValue.RecoverTime)
 	{
-		// Recover block value over time
-		const double RecoverValue = (BlockValue.MaxValue / BlockValue.RecoverTime) * DeltaTime ;
-		ChangeBlockValue(RecoverValue,false);
+		if (BlockValue.Value > 0)
+		{
+			// Recover block value over time
+			const double RecoverValue = (BlockValue.RecoverValue) * DeltaTime ;
+			ChangeBlockValue(-RecoverValue,false);
+		}
+
 	}
 
 }
@@ -85,10 +90,14 @@ void UPlayerAttributeComponent::GetHeadViewWidget()
 {
 	if (!HeadViewWidget.IsValid())
 	{
-		const auto GameFightCharacter = Cast<AGameFightCharacter>(GetOwner());
-		if (GameFightCharacter)
+
+		if (const auto GameFightCharacter = Cast<AGameFightCharacter>(GetOwner()); GameFightCharacter)
 		{
 			HeadViewWidget = Cast<UHeadView>(GameFightCharacter->HeadViewUI->GetUserWidgetObject());
+		}
+		else if (const auto GameFightNpc = Cast<AGameFightNpc>(GetOwner()); GameFightNpc)
+		{
+			HeadViewWidget = Cast<UHeadView>(GameFightNpc->HeadViewUI->GetUserWidgetObject());
 		}
 	}
 }
