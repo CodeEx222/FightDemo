@@ -16,6 +16,32 @@ struct FInputElement;
 class UGameAnimInstance;
 class AGameFightCharacter;
 
+
+USTRUCT(BlueprintType)
+struct FPlayAttackData
+{
+	GENERATED_BODY()
+
+public:
+
+	// 动作对象
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UAnimMontage* ActionAnimMontageInPlace = nullptr;
+
+	// 动作对象
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UAnimMontage* ActionAnimMontageMove = nullptr;
+
+	// 消除格挡值
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int AttackBlockValue = 0;
+
+	// 消除血量值
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int AttackHPValue = 0;
+
+};
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class FIGHTDEMO_API UFightComponent : public UActorComponent
 {
@@ -54,10 +80,17 @@ public:
 	void AddInput(EInputEnum InputEnum);
 
 
-	void PlayAttackSkill(FAttackAnimTable* SkillToPlay);
+	UFUNCTION(BlueprintCallable)
+	float PlayAttackSkill(FAttackAnimTable SkillToPlay);
+
+	UFUNCTION(BlueprintCallable)
+	float PlayAttackSkillByData(FPlayAttackData SkillToPlay);
+
+
 	void PlayBeAttackSkill(AGameFightBase* AttackActor ,FGameplayTag AttackTag);
 	void PlayBlockBeAttack(AGameFightBase* AttackActor ,FGameplayTag AttackTag);
 	void PlayBlockBreak(AGameFightBase* AttackActor ,FGameplayTag AttackTag);
+	void PlayFinish(AGameFightBase* AttackActor);
 
 	virtual void OnAnimNotify(UAnimNotify * Notify);
 	virtual void OnAnimNotifyState(UAnimNotifyState * NotifyState, bool bStart);
@@ -77,6 +110,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void PlayBlock(bool EnterValue);
 
+	UFUNCTION()
+	float CharacterPlayMontage(UAnimMontage* Montage, float InPlayRate = 1.0f, FName StartSectionName = NAME_None,
+		EMontagePlayReturnType ReturnValueType = EMontagePlayReturnType::MontageLength);
+
+
+	// 当前播放的反击动作
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPlayAttackData BlockAttackData;
 
 private:
 	void CheckAttack();
@@ -92,18 +133,19 @@ private:
 	UGameAnimInstance* GetAnimInstance();
 
 	// 当前播放的动作表
-	FAttackAnimTable* CurrentAnimTable;
+	FPlayAttackData CurrentAnimTable;
 
 	// 动画播放实例ID
 	int AnimPlayInstanceID;
 
-	UFUNCTION()
-	void CharacterPlayMontage(UAnimMontage* Montage, float InPlayRate = 1.0f, FName StartSectionName = NAME_None,
-		EMontagePlayReturnType ReturnValueType = EMontagePlayReturnType::MontageLength);
+	FTimerHandle PlayMontageTimerHandle;
+
+
 
 	UFUNCTION()
 	void OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInterrupted, int32 InstanceID);
 
+	void OnAnimPlayFinish();
 	// 播放受击
 	void PlayHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag);
 	void PlayBlockHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag);

@@ -36,19 +36,22 @@ void AGameFightBase::Tick(float DeltaTime)
 	if (GetCharacterMovement()->Velocity.Size() > 0.0f)
 	{
 		// 如果有移动速度, Mesh 旋转值旋转到actor旋转
-		const auto Mesh = GetMesh();
-		const auto OldMeshRotation = Mesh->GetComponentRotation();
-		const auto NewRotation = GetActorRotation();
-
+		const auto AnimMesh = GetMesh();
+		const auto OldMeshRotation = AnimMesh->GetComponentRotation();
+		const auto NewRotation = GetActorRotation() + FRotator(0.0f, 270.0f, 0.0f);
+		// AnimMesh 按时间线性旋转到 NewRotation
+		const auto InterpolatedRotation =
+			FMath::RInterpTo(OldMeshRotation, NewRotation, DeltaTime, 10.0f);
+		AnimMesh->SetWorldRotation(InterpolatedRotation);
 	}
 }
 
 void AGameFightBase::SetGameActorRotation(const FRotator NewRotation)
 {
-	const auto Mesh = GetMesh();
-	const auto OldMeshRotation = Mesh->GetComponentRotation();
+	const auto AnimMesh = GetMesh();
+	const auto OldMeshRotation = AnimMesh->GetComponentRotation();
 	SetActorRotation(NewRotation);
-	Mesh->SetWorldRotation(OldMeshRotation);
+	AnimMesh->SetWorldRotation(OldMeshRotation);
 }
 
 void AGameFightBase::MoveToDir(FRotator MoveDir, float Right, float Forward)

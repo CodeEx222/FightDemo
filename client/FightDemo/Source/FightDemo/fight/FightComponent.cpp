@@ -174,20 +174,36 @@ void UFightComponent::AddInput(EInputEnum InputEnum)
 }
 
 
-void UFightComponent::PlayAttackSkill(FAttackAnimTable* SkillToPlay)
+float UFightComponent::PlayAttackSkill(FAttackAnimTable SkillToPlay)
+{
+	CurrentAnimTable.ActionAnimMontageMove = SkillToPlay.ActionAnimMontageMove.LoadSynchronous();
+	CurrentAnimTable.ActionAnimMontageInPlace = SkillToPlay.ActionAnimMontageInPlace.LoadSynchronous();
+	CurrentAnimTable.AttackBlockValue = SkillToPlay.AttackBlockValue;
+	CurrentAnimTable.AttackHPValue = SkillToPlay.AttackHPValue;
+
+	return PlayAttackSkillByData(CurrentAnimTable);
+}
+
+float UFightComponent::PlayAttackSkillByData(FPlayAttackData SkillToPlay)
 {
 	CurrentAnimTable = SkillToPlay;
+
 	// 要播放的动画
 	// 需要查看目标或者前方180米是否有人, 有人的话就播放inplace动画 有人比较远播放 move动画 没人就播放inplace动画
 	bool bOutIsMove;
-	auto target = GetAttackCharacter(bOutIsMove);
+
+	const AGameFightBase* Target = GetOwnCharacter()->FightTarget;
+	if (Target == nullptr)
+	{
+		Target = GetAttackCharacter(bOutIsMove);
+	}
 
 
-	if (target != nullptr)
+	if (Target != nullptr)
 	{
 		// actor 旋转过去
 		const auto OwnCharacter = GetOwnCharacter();
-		const auto TargetLocation = target->GetActorLocation();
+		const auto TargetLocation = Target->GetActorLocation();
 		const auto OwnLocation = OwnCharacter->GetActorLocation();
 		const auto TargetRotator = (TargetLocation - OwnLocation).Rotation();
 		OwnCharacter->SetGameActorRotation(TargetRotator);
@@ -196,19 +212,19 @@ void UFightComponent::PlayAttackSkill(FAttackAnimTable* SkillToPlay)
 	UAnimMontage* PlayMontage;
 	if (bOutIsMove)
 	{
-		const auto Anim = SkillToPlay->ActionAnimMontageMove;
-		PlayMontage = Anim.LoadSynchronous();
+		PlayMontage = CurrentAnimTable.ActionAnimMontageMove;
 	}
 	else
 	{
-		const auto Anim = SkillToPlay->ActionAnimMontageInPlace;
-		PlayMontage = Anim.LoadSynchronous();
+		PlayMontage = CurrentAnimTable.ActionAnimMontageInPlace;
 	}
 
 
-	CharacterPlayMontage(PlayMontage);
+	const auto PlayTime = CharacterPlayMontage(PlayMontage);
 	// 设置攻击状态
 	ActiveMutexGameplayTags = TAG("game.MutexState.Attacking");
+
+	return PlayTime;
 }
 
 void UFightComponent::PlayBeAttackSkill(AGameFightBase* AttackActor ,FGameplayTag AttackTag)
@@ -253,6 +269,29 @@ void UFightComponent::PlayBlockBreak(AGameFightBase* AttackActor, FGameplayTag A
 	GetAnimInstance()->PlayAnimSequenceByPath(finallyPath,"SkillSlot");
 }
 
+void UFightComponent::PlayFinish(AGameFightBase* AttackActor)
+{
+
+	// /Script/Engine.AnimMontage'/Game/common/montage/finish/MT_Finish_BeAttack.MT_Finish_BeAttack'
+	// /Script/Engine.AnimMontage'/Game/common/montage/finish/MT_Finish_Attack.MT_Finish_Attack'
+
+	ActiveMutexGameplayTags = TAG("game.MutexState.Finish");
+
+	// 定义资源路径
+	FString MontageBeAttackPath = TEXT("/Script/Engine.AnimMontage'/Game/common/montage/finish/MT_Finish_BeAttack.MT_Finish_BeAttack'");
+	FString MontageAttackPath = TEXT("/Script/Engine.AnimMontage'/Game/common/montage/finish/MT_Finish_Attack.MT_Finish_Attack'");
+
+	// 同步加载蒙太奇资源
+	UAnimMontage* MontageBeAttack = LoadObject<UAnimMontage>(nullptr, *MontageBeAttackPath);
+	UAnimMontage* MontageAttack = LoadObject<UAnimMontage>(nullptr, *MontageAttackPath);
+
+
+
+	CharacterPlayMontage(MontageBeAttack);
+	AttackActor->FightComponent->CharacterPlayMontage(MontageAttack);
+
+}
+
 
 void UFightComponent::PlayDoge()
 {
@@ -290,6 +329,16 @@ void UFightComponent::PlayBlock(bool EnterValue)
 		ActiveMutexGameplayTags = TAG("game.MutexState.Defending");
 		// 清空连击状态
 		ActiveGameplayTags.RemoveTag(TAG("game.State.Combat.Attack.Combo"));
+
+		// 假如对面在 攻击状态, 播放防御反击动作
+		auto Target = GetOwnCharacter()->FightTarget;
+		if (Target != nullptr &&
+			Target->FightComponent->ActiveGameplayTags.HasTagExact(TAG("game.animNotifyState.fanji")))
+		{
+			PlayAttackSkillByData(BlockAttackData);
+
+		}
+
 	}
 	else
 	{
@@ -321,7 +370,7 @@ void UFightComponent::CheckAttack()
 		ActiveGameplayTags.AddTag(TAG("game.State.Combat.Attack.Combo"));
 	}
 
-	PlayAttackSkill(SkillToPlay);
+	PlayAttackSkill(*SkillToPlay);
 }
 
 void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
@@ -351,18 +400,38 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 					if (TargetFightComponent->ActiveMutexGameplayTags == TAG("game.MutexState.Defending"))
 					{
 						// 计算伤害
-						const auto ChangeValue = CurrentAnimTable->AttackBlockValue;
+						const auto ChangeValue = CurrentAnimTable.AttackBlockValue;
 						if (target->PlayerAttributeComponent != nullptr)
 						{
-							// 减少目标的血量
+							// 减少目标的格挡值
 							target->PlayerAttributeComponent->ChangeBlockValue(ChangeValue);
 						}
 
 						if (target->PlayerAttributeComponent->BlockValue.Value >=
 							target->PlayerAttributeComponent->BlockValue.MaxValue )
 						{
-							// 格挡破防
-							TargetFightComponent->PlayBlockBreak(GetOwnCharacter(),fightNotify->AnimTag);
+							// 扣血
+							const auto ChangeHPValue = CurrentAnimTable.AttackHPValue;
+							if (target->PlayerAttributeComponent != nullptr)
+							{
+								// 减少目标的血量
+								target->PlayerAttributeComponent->ChangeHpValue(-ChangeHPValue);
+							}
+
+							if (target->PlayerAttributeComponent->HPValue.Value <= 50 )
+							{
+								// 播放终结技
+								TargetFightComponent->PlayFinish(GetOwnCharacter());
+							}
+							else
+							{
+								// 格挡破防
+								TargetFightComponent->PlayBlockBreak(GetOwnCharacter(),fightNotify->AnimTag);
+
+							}
+
+
+
 						}
 						else
 						{
@@ -375,7 +444,7 @@ void UFightComponent::OnAnimNotify(UAnimNotify * Notify)
 					else
 					{
 						// 计算伤害
-						const auto ChangeValue = CurrentAnimTable->AttackHPValue;
+						const auto ChangeValue = CurrentAnimTable.AttackHPValue;
 						if (target->PlayerAttributeComponent != nullptr)
 						{
 							// 减少目标的血量
@@ -586,15 +655,17 @@ AGameFightBase* UFightComponent::GetAttackCharacter(bool& OutIsMove)
 
 #pragma region 动画结束通知
 
-void UFightComponent::CharacterPlayMontage(UAnimMontage* Montage, float InPlayRate, const FName StartSectionName,
+float UFightComponent::CharacterPlayMontage(UAnimMontage* Montage, float InPlayRate, const FName StartSectionName,
 	const EMontagePlayReturnType ReturnValueType)
 {
 	AnimPlayInstanceID++;
 	FOnMontageBlendingOutStarted BlendingOutDelegate;
 	BlendingOutDelegate.BindUObject(this, &UFightComponent::OnMontagePlayBlendingOut,AnimPlayInstanceID);
 
-	GetAnimInstance()->PlayAnimMontage(Montage,1,StartSectionName,ReturnValueType);
+	const auto PlayTime = GetAnimInstance()->PlayAnimMontage(Montage,1,StartSectionName,ReturnValueType);
 	GetAnimInstance()->Montage_SetBlendingOutDelegate(BlendingOutDelegate, Montage);
+
+	return PlayTime;
 }
 
 void UFightComponent::OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInterrupted, int32 InstanceID)
@@ -610,9 +681,14 @@ void UFightComponent::OnMontagePlayBlendingOut(UAnimMontage* Montage, bool bInte
 	// 说明后续没有动作了
 	if (InstanceID == AnimPlayInstanceID)
 	{
-		ActiveMutexGameplayTags = TAG("game.MutexState.Normal");
-		ActiveGameplayTags.RemoveTag(TAG("game.State.Combat.Attack.Combo"));
+		OnAnimPlayFinish();
 	}
+}
+
+void UFightComponent::OnAnimPlayFinish()
+{
+	ActiveMutexGameplayTags = TAG("game.MutexState.Normal");
+	ActiveGameplayTags.RemoveTag(TAG("game.State.Combat.Attack.Combo"));
 }
 
 #pragma endregion
@@ -691,7 +767,13 @@ void UFightComponent::PlayHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag
 	// 打印到屏幕上
 	UE_LOG(LogTemp, Warning, TEXT("PlayHit AnimPath: %s"), *finallyPath);
 
-	GetAnimInstance()->PlayAnimSequenceByPath(finallyPath,"SkillSlot");
+	float playTime = GetAnimInstance()->PlayAnimSequenceByPath(finallyPath,"SkillSlot");
+	// 设置 playTime 秒后 恢复正常状态
+	if (playTime > 0)
+	{
+		GetWorld()->GetTimerManager().SetTimer(PlayMontageTimerHandle,
+			this, &UFightComponent::OnAnimPlayFinish, playTime, false);
+	}
 }
 
 void UFightComponent::PlayBlockHit(EHitDirection8 AttackerDir, FGameplayTag AttackTag)
